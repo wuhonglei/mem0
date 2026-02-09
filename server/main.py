@@ -9,7 +9,8 @@ from pydantic import BaseModel, Field
 
 from mem0 import Memory
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Load environment variables
 load_dotenv()
@@ -20,7 +21,8 @@ POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
 POSTGRES_DB = os.environ.get("POSTGRES_DB", "postgres")
 POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "postgres")
-POSTGRES_COLLECTION_NAME = os.environ.get("POSTGRES_COLLECTION_NAME", "memories")
+POSTGRES_COLLECTION_NAME = os.environ.get(
+    "POSTGRES_COLLECTION_NAME", "memories")
 
 NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USERNAME = os.environ.get("NEO4J_USERNAME", "neo4j")
@@ -37,7 +39,8 @@ HISTORY_DB_PATH = os.environ.get("HISTORY_DB_PATH", "/app/history/history.db")
 MEM0_LLM_MODEL = os.environ.get("MEM0_LLM_MODEL", "gpt-4.1-nano-2025-04-14")
 MEM0_LLM_BASE_URL = os.environ.get("MEM0_LLM_BASE_URL")
 MEM0_LLM_TEMPERATURE = float(os.environ.get("MEM0_LLM_TEMPERATURE", "0.2"))
-MEM0_EMBEDDER_MODEL = os.environ.get("MEM0_EMBEDDER_MODEL", "text-embedding-3-small")
+MEM0_EMBEDDER_MODEL = os.environ.get(
+    "MEM0_EMBEDDER_MODEL", "text-embedding-3-small")
 MEM0_EMBEDDER_BASE_URL = os.environ.get("MEM0_EMBEDDER_BASE_URL")
 MEM0_EMBEDDER_DIMENSION = os.environ.get("MEM0_EMBEDDER_DIMENSION")
 
@@ -74,10 +77,10 @@ DEFAULT_CONFIG = {
         "provider": "pgvector",
         "config": _vector_store_config,
     },
-    "graph_store": {
-        "provider": "neo4j",
-        "config": {"url": NEO4J_URI, "username": NEO4J_USERNAME, "password": NEO4J_PASSWORD},
-    },
+    # "graph_store": {
+    #     "provider": "neo4j",
+    #     "config": {"url": NEO4J_URI, "username": NEO4J_USERNAME, "password": NEO4J_PASSWORD},
+    # },
     "llm": {"provider": "openai", "config": _llm_config},
     "embedder": {"provider": "openai", "config": _embedder_config},
     "history_db_path": HISTORY_DB_PATH,
@@ -94,12 +97,14 @@ app = FastAPI(
 
 
 class Message(BaseModel):
-    role: str = Field(..., description="Role of the message (user or assistant).")
+    role: str = Field(...,
+                      description="Role of the message (user or assistant).")
     content: str = Field(..., description="Message content.")
 
 
 class MemoryCreate(BaseModel):
-    messages: List[Message] = Field(..., description="List of messages to store.")
+    messages: List[Message] = Field(...,
+                                    description="List of messages to store.")
     user_id: Optional[str] = None
     agent_id: Optional[str] = None
     run_id: Optional[str] = None
@@ -126,14 +131,18 @@ def set_config(config: Dict[str, Any]):
 def add_memory(memory_create: MemoryCreate):
     """Store new memories."""
     if not any([memory_create.user_id, memory_create.agent_id, memory_create.run_id]):
-        raise HTTPException(status_code=400, detail="At least one identifier (user_id, agent_id, run_id) is required.")
+        raise HTTPException(
+            status_code=400, detail="At least one identifier (user_id, agent_id, run_id) is required.")
 
-    params = {k: v for k, v in memory_create.model_dump().items() if v is not None and k != "messages"}
+    params = {k: v for k, v in memory_create.model_dump(
+    ).items() if v is not None and k != "messages"}
     try:
-        response = MEMORY_INSTANCE.add(messages=[m.model_dump() for m in memory_create.messages], **params)
+        response = MEMORY_INSTANCE.add(
+            messages=[m.model_dump() for m in memory_create.messages], **params)
         return JSONResponse(content=response)
     except Exception as e:
-        logging.exception("Error in add_memory:")  # This will log the full traceback
+        # This will log the full traceback
+        logging.exception("Error in add_memory:")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -145,7 +154,8 @@ def get_all_memories(
 ):
     """Retrieve stored memories."""
     if not any([user_id, run_id, agent_id]):
-        raise HTTPException(status_code=400, detail="At least one identifier is required.")
+        raise HTTPException(
+            status_code=400, detail="At least one identifier is required.")
     try:
         params = {
             k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v is not None
@@ -170,7 +180,8 @@ def get_memory(memory_id: str):
 def search_memories(search_req: SearchRequest):
     """Search for memories based on a query."""
     try:
-        params = {k: v for k, v in search_req.model_dump().items() if v is not None and k != "query"}
+        params = {k: v for k, v in search_req.model_dump(
+        ).items() if v is not None and k != "query"}
         return MEMORY_INSTANCE.search(query=search_req.query, **params)
     except Exception as e:
         logging.exception("Error in search_memories:")
@@ -180,11 +191,11 @@ def search_memories(search_req: SearchRequest):
 @app.put("/memories/{memory_id}", summary="Update a memory")
 def update_memory(memory_id: str, updated_memory: Dict[str, Any]):
     """Update an existing memory with new content.
-    
+
     Args:
         memory_id (str): ID of the memory to update
         updated_memory (str): New content to update the memory with
-        
+
     Returns:
         dict: Success message indicating the memory was updated
     """
@@ -224,7 +235,8 @@ def delete_all_memories(
 ):
     """Delete all memories for a given identifier."""
     if not any([user_id, run_id, agent_id]):
-        raise HTTPException(status_code=400, detail="At least one identifier is required.")
+        raise HTTPException(
+            status_code=400, detail="At least one identifier is required.")
     try:
         params = {
             k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v is not None
