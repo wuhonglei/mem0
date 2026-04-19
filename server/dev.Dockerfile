@@ -2,8 +2,10 @@ FROM python:3.12
 
 WORKDIR /app
 
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
 # Install Poetry from mirror
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple poetry
+RUN pip install --no-cache-dir poetry
 
 # Copy requirements first for better caching
 COPY server/requirements.txt .
