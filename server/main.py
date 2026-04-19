@@ -164,6 +164,22 @@ class SearchRequest(BaseModel):
     threshold: Optional[float] = Field(None, description="Minimum similarity score for results.")
 
 
+def _build_filters(
+    user_id: Optional[str] = None,
+    run_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    base_filters: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    filters = dict(base_filters or {})
+    if user_id is not None:
+        filters["user_id"] = user_id
+    if run_id is not None:
+        filters["run_id"] = run_id
+    if agent_id is not None:
+        filters["agent_id"] = agent_id
+    return filters
+
+
 @app.post("/configure", summary="Configure Mem0")
 def set_config(config: Dict[str, Any], _api_key: Optional[str] = Depends(verify_api_key)):
     """Set memory configuration."""
@@ -203,10 +219,8 @@ def get_all_memories(
         raise HTTPException(
             status_code=400, detail="At least one identifier is required.")
     try:
-        params = {
-            k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v is not None
-        }
-        return MEMORY_INSTANCE.get_all(**params)
+        filters = _build_filters(user_id=user_id, run_id=run_id, agent_id=agent_id)
+        return MEMORY_INSTANCE.get_all(filters=filters)
     except Exception as e:
         logging.exception("Error in get_all_memories:")
         raise HTTPException(status_code=500, detail=str(e))
@@ -226,9 +240,18 @@ def get_memory(memory_id: str, _api_key: Optional[str] = Depends(verify_api_key)
 def search_memories(search_req: SearchRequest, _api_key: Optional[str] = Depends(verify_api_key)):
     """Search for memories based on a query."""
     try:
-        params = {k: v for k, v in search_req.model_dump(
-        ).items() if v is not None and k != "query"}
-        return MEMORY_INSTANCE.search(query=search_req.query, **params)
+        filters = _build_filters(
+            user_id=search_req.user_id,
+            run_id=search_req.run_id,
+            agent_id=search_req.agent_id,
+            base_filters=search_req.filters,
+        )
+        params = {
+            "top_k": search_req.top_k,
+            "threshold": search_req.threshold,
+        }
+        search_params = {k: v for k, v in params.items() if v is not None}
+        return MEMORY_INSTANCE.search(query=search_req.query, filters=filters, **search_params)
     except Exception as e:
         logging.exception("Error in search_memories:")
         raise HTTPException(status_code=500, detail=str(e))
