@@ -54,7 +54,7 @@ MEM0_EMBEDDER_MODEL = os.environ.get(
 MEM0_EMBEDDER_BASE_URL = os.environ.get("MEM0_EMBEDDER_BASE_URL")
 MEM0_EMBEDDER_DIMENSION = os.environ.get("MEM0_EMBEDDER_DIMENSION")
 
-_vector_store_config = {
+_vector_store_config: Dict[str, Any] = {
     "host": POSTGRES_HOST,
     "port": int(POSTGRES_PORT),
     "dbname": POSTGRES_DB,
@@ -62,7 +62,7 @@ _vector_store_config = {
     "password": POSTGRES_PASSWORD,
     "collection_name": POSTGRES_COLLECTION_NAME,
 }
-_embedder_config = {
+_embedder_config: Dict[str, Any] = {
     "api_key": OPENAI_API_KEY,
     "model": MEM0_EMBEDDER_MODEL,
 }
@@ -73,7 +73,7 @@ if MEM0_EMBEDDER_DIMENSION:
     _embedder_config["embedding_dims"] = dim
     _vector_store_config["embedding_model_dims"] = dim
 
-_llm_config = {
+_llm_config: Dict[str, Any] = {
     "api_key": OPENAI_API_KEY,
     "temperature": MEM0_LLM_TEMPERATURE,
     "model": MEM0_LLM_MODEL,
