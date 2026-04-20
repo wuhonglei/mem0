@@ -1047,15 +1047,17 @@ def generate_additive_extraction_prompt(
     if use_input_language:
         sections.append(
             "## Language Requirement\n"
-            "CRITICAL: Respond in the SAME LANGUAGE and SCRIPT as the input messages.\n"
-            "1. Match the language of the user's messages exactly — if they write in Korean, extract in Korean; Japanese in Japanese; etc.\n"
-            "2. Preserve the exact script/alphabet of the input.\n"
-            "3. Do NOT translate or transliterate into English unless the input is already in English.\n"
-            "4. Maintain all quality standards (contextual richness, temporal grounding, etc.) regardless of language.\n"
-            "5. Technical terms, proper nouns, and brand names should be preserved in their original form as used in the input.\n"
-            "6. If the input mixes languages (e.g., Hinglish), preserve both the mixed language style AND the script.\n"
-            "7. For Japanese: explicitly resolve omitted subjects using conversation context.\n"
-            "8. For CJK languages: maintain appropriate formality level from the source text."
+            "CRITICAL: Determine output language from USER messages only, and match that language/script exactly.\n"
+            "1. Use only content from user-role messages in 'New Messages' and 'Last k Messages' to determine language.\n"
+            "2. Ignore assistant/system language when deciding output language.\n"
+            "3. If user messages are Chinese, every extracted memory `text` must be Chinese (except unchanged proper nouns/brand names/technical terms).\n"
+            "4. If user messages are English, every extracted memory `text` must be English.\n"
+            "5. Do NOT translate or transliterate into English unless user messages are English.\n"
+            "6. Preserve the exact script/alphabet of user messages.\n"
+            "7. If user messages mix languages, preserve that mixed style in the corresponding memory text.\n"
+            "8. Maintain all quality standards (contextual richness, temporal grounding, precision) regardless of language.\n"
+            "9. For Japanese: explicitly resolve omitted subjects using conversation context.\n"
+            "10. For CJK languages: maintain appropriate formality level from the source text."
         )
 
     sections.append("# Output:")
