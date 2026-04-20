@@ -212,6 +212,7 @@ def get_all_memories(
     user_id: Optional[str] = None,
     run_id: Optional[str] = None,
     agent_id: Optional[str] = None,
+    top_k: int = 1000,
     _api_key: Optional[str] = Depends(verify_api_key),
 ):
     """Retrieve stored memories."""
@@ -220,7 +221,7 @@ def get_all_memories(
             status_code=400, detail="At least one identifier is required.")
     try:
         filters = _build_filters(user_id=user_id, run_id=run_id, agent_id=agent_id)
-        return MEMORY_INSTANCE.get_all(filters=filters)
+        return MEMORY_INSTANCE.get_all(filters=filters, top_k=top_k)
     except Exception as e:
         logging.exception("Error in get_all_memories:")
         raise HTTPException(status_code=500, detail=str(e))
