@@ -733,6 +733,7 @@ class Memory(MemoryBase):
             new_messages=parsed_messages,
             last_k_messages=last_messages,
             custom_instructions=custom_instr,
+            use_input_language=True,
         )
 
         try:
@@ -2140,6 +2141,7 @@ class AsyncMemory(MemoryBase):
             new_messages=parsed_messages,
             last_k_messages=last_messages,
             custom_instructions=custom_instr,
+            use_input_language=True,
         )
 
         try:
