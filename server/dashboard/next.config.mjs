@@ -27,6 +27,21 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    const backend = process.env.API_INTERNAL_URL || "http://localhost:8000";
+    return [
+      { source: "/auth/:path*", destination: `${backend}/auth/:path*` },
+      { source: "/memories/:path*", destination: `${backend}/memories/:path*` },
+      { source: "/configure/:path*", destination: `${backend}/configure/:path*` },
+      { source: "/configure", destination: `${backend}/configure` },
+      { source: "/reset", destination: `${backend}/reset` },
+      { source: "/generate-instructions", destination: `${backend}/generate-instructions` },
+      { source: "/api-keys/:path*", destination: `${backend}/api-keys/:path*` },
+      { source: "/api-keys", destination: `${backend}/api-keys` },
+      { source: "/requests", destination: `${backend}/requests` },
+      { source: "/entities/:path*", destination: `${backend}/entities/:path*` },
+    ];
+  },
   redirects: async () => {
     return [
       {
