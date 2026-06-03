@@ -1,40 +1,126 @@
-# Mem0 REST API Server
+# Mem0 Self-Hosted Server
 
-Mem0 provides a REST API server (written using FastAPI). Users can perform all operations through REST endpoints. The API also includes OpenAPI documentation, accessible at `/docs` when the server is running.
+Mem0 ships a self-hosted FastAPI server plus a local dashboard. It is secure by default, supports dashboard login and API keys, and exposes OpenAPI docs at `/docs`.
 
-## Features
+## Quick Start
 
-- **Create memories:** Create memories based on messages for a user, agent, or run.
-- **Retrieve memories:** Get all memories for a given user, agent, or run.
-- **Search memories:** Search stored memories based on a query.
-- **Update memories:** Update an existing memory.
-- **Delete memories:** Delete a specific memory or all memories for a user, agent, or run.
-- **Reset memories:** Reset all memories for a user, agent, or run.
-- **OpenAPI Documentation:** Accessible via `/docs` endpoint.
+### Agent-first
 
-## Running the server
+Run one command; the terminal prints the admin email, password, and first API key.
 
-Follow the instructions in the [docs](https://docs.mem0.ai/open-source/features/rest-api) to run the server.
-
-## 自定义 LLM / Embedder（DashScope 通义千问示例）
-
-通过环境变量可切换为阿里云 DashScope（OpenAI 兼容模式）等第三方模型，用于摘要生成（LLM）和向量化（Embedder）。
-
-1. 复制 `.env.example` 为 `.env`，按需填写。
-2. 使用 DashScope 时，在 `.env` 中配置例如：
-
-```env
-OPENAI_API_KEY=sk-your-dashscope-api-key
-
-# 摘要生成模型（LLM）
-MEM0_LLM_MODEL=qwen-plus
-MEM0_LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-MEM0_LLM_TEMPERATURE=0.2
-
-# 向量模型（Embedder）
-MEM0_EMBEDDER_MODEL=text-embedding-v4
-MEM0_EMBEDDER_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-MEM0_EMBEDDER_DIMENSION=1024
+```bash
+cd server
+make bootstrap
 ```
 
-不设置 `MEM0_*` 时，将使用默认 OpenAI 配置（`gpt-4.1-nano-2025-04-14`、`text-embedding-3-small`）。底层逻辑见 `mem0/memory/main.py` 中 `Memory.from_config` 及 `search` / `add` 使用的 LLM 与 Embedder。
+This starts the stack, waits for the API and dashboard to be ready, creates the first admin, and generates the first API key.
+
+> The generated credentials print once in the `=== Ready ===` block. Save the password and API key before closing the terminal — the API key cannot be recovered afterwards.
+
+> `make bootstrap` skips the setup wizard, so the use-case → custom-instructions step doesn't run. To add custom instructions afterwards, `POST /configure` with `{"custom_instructions": "..."}`, or run the Browser-first flow on a fresh install.
+
+You can override the generated credentials:
+
+```bash
+cd server
+make bootstrap EMAIL=admin@company.com PASSWORD='strong-password' NAME='Admin'
+```
+
+For machine-readable output:
+
+```bash
+cd server
+OUTPUT=json make seed
+```
+
+Teardown:
+
+```bash
+# Stop the stack
+cd server && make down
+
+# Wipe all data (including the Postgres volume)
+cd server && make clean
+```
+
+### Browser-first
+
+Start the stack and finish setup by walking through the wizard in your browser.
+
+```bash
+cd server
+make up
+```
+
+Then open `http://localhost:3000` and complete the setup wizard.
+
+## Security Defaults
+
+- Dashboard login uses JWTs.
+- Programmatic access uses `X-API-Key`.
+- Auth is enabled by default.
+- `AUTH_DISABLED=true` exists for local development only and should not be used in production.
+
+## Forgotten password
+
+Reset an admin password from the host while the stack is running:
+
+```bash
+cd server
+make reset-admin-password EMAIL=admin@example.com PASSWORD='new-strong-password'
+```
+
+This is the supported recovery path. Anyone with shell access to the host already has full access to the database and secrets, so this command does not expand the attack surface.
+
+## Request log retention
+
+The `request_logs` table is append-only and grows with traffic (~864k rows/day at 10 req/s). Prune it periodically:
+
+```bash
+cd server
+make prune-logs                               # defaults to 30 days
+make prune-logs REQUEST_LOG_RETENTION_DAYS=7  # shorter window
+```
+
+Wire the command into cron or a systemd timer in production. The `created_at` column uses a BRIN index, so range deletes stay cheap even on large tables.
+
+## Local URLs
+
+- Dashboard: `http://localhost:3000`
+- API: `http://localhost:8888`
+- OpenAPI docs: `http://localhost:8888/docs`
+
+## Dashboard
+
+Once logged in, the dashboard exposes:
+
+- **Requests** — live audit log of API calls (method, path, status, latency).
+- **Memories** — browse memories, filter by user ID.
+- **Entities** — list every `user_id`, `agent_id`, and `run_id` that owns memories, with counts. Delete an entity to cascade-delete its memories.
+- **API Keys** — create, label, and revoke per-user keys.
+- **Configuration** — runtime LLM and embedder override. Changes persist to the app database and reapply on restart, layered over the values from your `.env`.
+- **Settings** — account profile and password.
+
+## Telemetry
+
+Enabled by default, matching the Mem0 OSS library. Sends at most two events per install to the same anonymous PostHog project the library uses:
+
+- `admin_registered` — fired when the first admin is created (wizard or direct API call). Properties: email domain, server version, install UUID.
+- `onboarding_completed` — fired when the setup wizard reaches its final success state. Carries the same properties plus the freeform `use_case` the operator entered. API-only bootstraps never emit this event.
+
+Set `MEM0_TELEMETRY=false` to opt out.
+
+## Security headers
+
+The dashboard sets the following response headers on every path (see `server/dashboard/next.config.mjs`):
+
+- `X-Frame-Options: DENY`
+- `Content-Security-Policy: frame-ancestors 'none'`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+
+Together these prevent iframe embedding, sniffing of mislabelled MIME types, and cross-origin referrer leaks. Harden further behind your own reverse proxy if needed.
+
+## Reference
+
+Additional product and API documentation lives at [docs.mem0.ai](https://docs.mem0.ai/open-source/overview).

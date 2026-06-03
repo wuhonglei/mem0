@@ -28,6 +28,7 @@ import type {
 import { createProvider, providerToBackend } from "./providers.ts";
 import { mem0ConfigSchema } from "./config.ts";
 import type { FileConfig } from "./config.ts";
+import { createPublicArtifactsProvider } from "./public-artifacts.ts";
 import { filterMessagesForExtraction } from "./filtering.ts";
 import {
   effectiveUserId,
@@ -59,8 +60,6 @@ import type { ToolDeps } from "./tools/index.ts";
 import { captureEvent } from "./telemetry.ts";
 import { bootstrapTelemetryFlag } from "./fs-safe.ts";
 
-bootstrapTelemetryFlag();
-
 // ============================================================================
 // Re-exports (for tests and external consumers)
 // ============================================================================
@@ -76,6 +75,7 @@ export {
 export {
   isNoiseMessage,
   isGenericAssistantMessage,
+  isSessionSpecificContent,
   stripNoiseFromContent,
   filterMessagesForExtraction,
 } from "./filtering.ts";
@@ -97,6 +97,8 @@ const memoryPlugin = definePluginEntry({
   description: "Mem0 memory backend — Mem0 platform or self-hosted open-source",
 
   register(api: OpenClawPluginApi) {
+    bootstrapTelemetryFlag();
+
     // Read auth from openclaw.json plugin config (picks up post-startup login).
     // This is the single source of truth — set via `openclaw mem0 login`.
     const pluginAuth = readPluginAuth();
@@ -125,7 +127,7 @@ const memoryPlugin = definePluginEntry({
         "openclaw-mem0: API key not configured. Memory features are disabled.\n" +
           "  To set up, run:\n" +
           "  openclaw mem0 init\n" +
-          "  Get your key at: https://app.mem0.ai/dashboard/api-keys",
+          "  Get your key at: https://app.mem0.ai/dashboard/api-keys?utm_source=oss&utm_medium=openclaw-src",
       );
 
       // Register CLI even without API key — init command must be available
@@ -191,24 +193,92 @@ const memoryPlugin = definePluginEntry({
       `openclaw-mem0: registered (mode: ${cfg.mode}, user: ${cfg.userId}, autoRecall: ${cfg.autoRecall}, autoCapture: ${cfg.autoCapture}, skills: ${skillsActive})`,
     );
 
+    // ========================================================================
+    // Public Artifacts (for memory-wiki bridge mode)
+    // ========================================================================
+    if (typeof api.registerMemoryCapability === "function") {
+      api.registerMemoryCapability({
+        publicArtifacts: createPublicArtifactsProvider({
+          provider,
+          cfg,
+          get stateDir() {
+            return pluginStateDir;
+          },
+          effectiveUserId: _effectiveUserId,
+        }),
+        runtime: {
+          async getMemorySearchManager(_params: any) {
+            try {
+              const userId = _effectiveUserId();
+              let memoryCount = 0;
+              try {
+                const memories = await provider.getAll({
+                  user_id: userId,
+                  page_size: 1,
+                  source: "OPENCLAW",
+                });
+                memoryCount = Array.isArray(memories) ? memories.length : 0;
+              } catch {
+                // Non-fatal: status still works without count
+              }
+              return {
+                manager: {
+                  status() {
+                    return {
+                      backend: cfg.mode,
+                      files: 0,
+                      chunks: memoryCount,
+                      dirty: false,
+                      workspaceDir: pluginStateDir ?? "",
+                      userId,
+                    };
+                  },
+                  async probeEmbeddingAvailability() {
+                    return { ok: true };
+                  },
+                  async close() {},
+                },
+              };
+            } catch (err) {
+              return {
+                manager: null,
+                error: `mem0 ${cfg.mode} backend unavailable: ${String(err)}`,
+              };
+            }
+          },
+          resolveMemoryBackendConfig(_params: any) {
+            return {
+              backend: cfg.mode,
+              baseUrl: cfg.baseUrl ?? "https://api.mem0.ai",
+              userId: cfg.userId,
+            };
+          },
+          async closeAllMemorySearchManagers() {},
+        },
+      });
+      api.logger.debug("openclaw-mem0: memory capability + runtime registered");
+    }
+
     // Helper: build add options
     function buildAddOptions(
       userIdOverride?: string,
       runId?: string,
       sessionKey?: string,
     ): AddOptions {
+      // v3.0.0: removed output_format, customPrompt renamed to customInstructions
       const opts: AddOptions = {
         user_id: userIdOverride || _effectiveUserId(sessionKey),
         source: "OPENCLAW",
       };
       if (runId) opts.run_id = runId;
-      if (cfg.mode === "platform") {
-        opts.output_format = "v1.1";
-      }
+      // Pass customInstructions and customCategories to control what Mem0 extracts
+      if (cfg.customInstructions) opts.custom_instructions = cfg.customInstructions;
+      if (cfg.customCategories) opts.custom_categories = cfg.customCategories;
       return opts;
     }
 
     // Helper: build search options (skills config overrides legacy defaults)
+    // v3.0.0: removed keyword_search, reranking, filter_memories, limit
     function buildSearchOptions(
       userIdOverride?: string,
       limit?: number,
@@ -219,13 +289,9 @@ const memoryPlugin = definePluginEntry({
       const opts: SearchOptions = {
         user_id: userIdOverride || _effectiveUserId(sessionKey),
         top_k: limit ?? cfg.topK,
-        limit: limit ?? cfg.topK,
         threshold: recallCfg?.threshold ?? cfg.searchThreshold,
-        keyword_search: recallCfg?.keywordSearch !== false,
-        reranking: recallCfg?.rerank !== false,
         source: "OPENCLAW",
       };
-      if (recallCfg?.filterMemories) opts.filter_memories = true;
       if (runId) opts.run_id = runId;
       return opts;
     }
@@ -663,12 +729,8 @@ function registerHooks(
           ),
         );
 
-        // Client-side threshold filter for auto-recall — use a stricter
-        // threshold (0.6) than explicit tool searches (0.5) to avoid
-        // injecting irrelevant memories into agent context
-        const recallThreshold = Math.max(cfg.searchThreshold, 0.6);
         longTermResults = longTermResults.filter(
-          (r) => (r.score ?? 0) >= recallThreshold,
+          (r) => (r.score ?? 0) >= cfg.searchThreshold,
         );
 
         // Dynamic thresholding: drop memories scoring less than 50% of
@@ -691,7 +753,7 @@ function registerHooks(
             undefined,
             recallSessionKey,
           );
-          broadOpts.threshold = 0.5;
+          broadOpts.threshold = cfg.searchThreshold;
           const broadResults = await provider.search(
             "recent decisions, preferences, active projects, and configuration",
             broadOpts,
@@ -950,7 +1012,7 @@ function registerHooks(
         content: `Current date: ${timestamp}. The user is identified as "${cfg.userId}". Extract durable facts from this conversation. Include this date when storing time-sensitive information.`,
       });
 
-      const addOpts = buildAddOptions(undefined, sessionId, sessionId);
+      const addOpts = buildAddOptions(undefined, undefined, sessionId);
       const captureStart = Date.now();
       provider
         .add(formattedMessages, addOpts)
