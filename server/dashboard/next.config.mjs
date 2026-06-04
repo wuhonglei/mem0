@@ -28,7 +28,7 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const backend = process.env.API_INTERNAL_URL || "http://localhost:8000";
+    const backend = "http://mem0:8000";
     return [
       { source: "/auth/:path*", destination: `${backend}/auth/:path*` },
       { source: "/memories/:path*", destination: `${backend}/memories/:path*` },
