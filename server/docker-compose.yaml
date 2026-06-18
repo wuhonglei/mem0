@@ -5,6 +5,7 @@ services:
     build:
       context: ..
       dockerfile: server/dev.Dockerfile
+    restart: on-failure
     ports:
       - "8888:8000"
     env_file:
@@ -51,6 +52,7 @@ services:
 
   mem0-dashboard:
     build: ./dashboard
+    restart: on-failure
     ports:
       - "3200:3000"
     networks:
