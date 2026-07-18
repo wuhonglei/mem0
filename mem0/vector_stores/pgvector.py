@@ -531,6 +531,7 @@ class PGVector(VectorStoreBase):
                 SELECT id, vector, payload
                 FROM {}
                 {}
+                ORDER BY (payload->>'created_at')::timestamptz DESC
                 LIMIT %s
                 """).format(self._col(), filter_clause),
                 (*filter_params, top_k),
