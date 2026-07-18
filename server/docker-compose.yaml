@@ -37,10 +37,10 @@ services:
     networks:
       - mem0_network
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     healthcheck:
-      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+      test: ["CMD-SHELL", "pg_isready -q -d postgres -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -58,7 +58,7 @@ services:
     networks:
       - mem0_network
     environment:
-      - NEXT_PUBLIC_API_URL=
+      - NEXT_PUBLIC_API_URL=http://localhost:8888
       - API_INTERNAL_URL=http://mem0:8000
       - NEXT_PUBLIC_INSTANCE_NAME=Mem0
     depends_on:
