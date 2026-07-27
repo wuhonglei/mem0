@@ -207,6 +207,7 @@
                               "components/vectordbs/dbs/milvus",
                               "components/vectordbs/dbs/pinecone",
                               "components/vectordbs/dbs/mongodb",
+                              "components/vectordbs/dbs/oracledb",
                               "components/vectordbs/dbs/azure",
                               "components/vectordbs/dbs/azure_mysql",
                               "components/vectordbs/dbs/redis",
@@ -633,7 +634,7 @@
     },
     {
       "source": "/platform/features/expiration-date",
-      "destination": "/"
+      "destination": "/platform/features/memory-expiration"
     },
     {
       "source": "/cookbooks/essentials/memory-expiration-short-and-long-term",
