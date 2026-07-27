@@ -6,11 +6,11 @@ f = '/usr/local/lib/python3.12/site-packages/mem0/vector_stores/pgvector.py'
 with open(f) as fh:
     content = fh.read()
 # Add ORDER BY before LIMIT in the list method's SELECT query
-old = '''                SELECT id, vector, payload
+old = '''                SELECT id, payload
                 FROM {}
                 {}
                 LIMIT %s'''
-new = '''                SELECT id, vector, payload
+new = '''                SELECT id, payload
                 FROM {}
                 {}
                 ORDER BY (payload->>'created_at')::timestamptz DESC
