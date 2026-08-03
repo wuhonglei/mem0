@@ -17,7 +17,9 @@ COPY pyproject.toml .
 COPY poetry.lock .
 COPY README.md .
 COPY mem0 ./mem0
-RUN pip install -e .[graph]
+RUN pip install -e .[graph,nlp]
+# Download spaCy English model via mirror
+RUN pip install https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
 # Return to app directory and copy server code
 WORKDIR /app
