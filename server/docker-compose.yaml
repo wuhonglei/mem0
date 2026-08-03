@@ -58,7 +58,7 @@ services:
     networks:
       - mem0_network
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8888
+      - NEXT_PUBLIC_API_URL=https://mem.wuhonglei.cn
       - API_INTERNAL_URL=http://mem0:8000
       - NEXT_PUBLIC_INSTANCE_NAME=Mem0
     depends_on:
