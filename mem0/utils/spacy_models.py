@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 _nlp_full = None
 _nlp_lemma = None
+_nlp_zh = None
 _load_failed_full = False
 _load_failed_lemma = False
+_load_failed_zh = False
 _lock = threading.Lock()
 
 
@@ -38,6 +40,29 @@ def _ensure_model_available():
             raise RuntimeError(
                 f"Failed to download spaCy model en_core_web_sm: {e}. "
                 "Please install manually: python -m spacy download en_core_web_sm"
+            ) from e
+
+
+def _ensure_zh_model_available():
+    """Download zh_core_web_sm if spaCy is installed but model is missing."""
+    try:
+        import spacy
+    except ImportError:
+        raise ImportError(
+            "spaCy is not installed. Install it with: pip install mem0ai[nlp]"
+        )
+
+    if not spacy.util.is_package("zh_core_web_sm"):
+        logger.info("Downloading spaCy model zh_core_web_sm...")
+        try:
+            from spacy.cli import download
+
+            download("zh_core_web_sm")
+            logger.info("spaCy model zh_core_web_sm downloaded successfully")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to download spaCy model zh_core_web_sm: {e}. "
+                "Please install manually: python -m spacy download zh_core_web_sm"
             ) from e
 
 
@@ -89,3 +114,28 @@ def get_nlp_lemma():
             _load_failed_lemma = True
             return None
     return _nlp_lemma
+
+
+def get_nlp_zh():
+    """Return spaCy zh_core_web_sm model for Chinese text segmentation."""
+    global _nlp_zh, _load_failed_zh
+    if _load_failed_zh:
+        return None
+    if _nlp_zh is not None:
+        return _nlp_zh
+    with _lock:
+        if _nlp_zh is not None:
+            return _nlp_zh
+        if _load_failed_zh:
+            return None
+        try:
+            _ensure_zh_model_available()
+            import spacy
+
+            _nlp_zh = spacy.load("zh_core_web_sm", disable=["ner", "parser"])
+            logger.info("spaCy zh model loaded")
+        except Exception as e:
+            logger.warning(f"Failed to load spaCy zh model: {e}")
+            _load_failed_zh = True
+            return None
+    return _nlp_zh
