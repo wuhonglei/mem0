@@ -14,11 +14,22 @@ import json
 import sys
 import time
 
+import os
+
 import psycopg
 from psycopg.rows import dict_row
 
 
-DB_DSN = "postgresql://postgres:postgres@postgres:5432/postgres"
+def _build_dsn() -> str:
+    host = os.environ.get("POSTGRES_HOST", "postgres")
+    port = os.environ.get("POSTGRES_PORT", "5432")
+    user = os.environ.get("POSTGRES_USER", "wuhonglei")
+    password = os.environ.get("POSTGRES_PASSWORD", "")
+    db = os.environ.get("POSTGRES_DB", "postgres")
+    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
+
+DB_DSN = _build_dsn()
 
 
 def get_unlemmatized_count(conn):
