@@ -7,6 +7,11 @@ export interface Memory {
   updated_at?: string;
 }
 
+export interface SearchMemory extends Memory {
+  score?: number;
+  run_id?: string;
+}
+
 export interface ApiKey {
   id: string;
   label: string;

@@ -32,6 +32,7 @@ const nextConfig = {
     return [
       { source: "/auth/:path*", destination: `${backend}/auth/:path*` },
       { source: "/memories/:path*", destination: `${backend}/memories/:path*` },
+      { source: "/search", destination: `${backend}/search` },
       { source: "/configure/:path*", destination: `${backend}/configure/:path*` },
       { source: "/configure", destination: `${backend}/configure` },
       { source: "/reset", destination: `${backend}/reset` },

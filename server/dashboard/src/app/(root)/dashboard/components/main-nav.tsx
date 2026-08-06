@@ -6,6 +6,7 @@ import {
   Activity,
   ChartLine,
   ChevronDown,
+  FlaskConical,
   FolderInput,
   GalleryVerticalEnd,
   KeyRound,
@@ -80,6 +81,12 @@ export function MainNav({
                     url: "/dashboard/entities",
                     icon: Users,
                     active: pathname === "/dashboard/entities",
+                  },
+                  {
+                    title: "Playground",
+                    url: "/dashboard/playground",
+                    icon: FlaskConical,
+                    active: pathname === "/dashboard/playground",
                   },
                 ].map((item) => (
                   <SidebarMenuItem key={item.title}>
