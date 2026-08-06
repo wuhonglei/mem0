@@ -23,6 +23,10 @@ import { api } from "@/utils/api";
 import { SEARCH_ENDPOINTS } from "@/utils/api-endpoints";
 import { SearchMemory } from "@/types/api";
 
+function formatScore(value: number | undefined): string {
+  return typeof value === "number" ? value.toFixed(2) : "--";
+}
+
 export default function PlaygroundPage() {
   const [userId, setUserId] = useState("");
   const [query, setQuery] = useState("");
@@ -50,11 +54,13 @@ export default function PlaygroundPage() {
     const body: {
       query: string;
       filters: { user_id: string };
+      explain: boolean;
       top_k?: number;
       threshold?: number;
     } = {
       query: trimmedQuery,
       filters: { user_id: trimmedUserId },
+      explain: true,
     };
 
     if (topK.trim()) {
@@ -114,9 +120,29 @@ export default function PlaygroundPage() {
     {
       key: "score" as keyof SearchMemory,
       label: "Score",
+      width: 70,
+      render: (value: number | undefined) => formatScore(value),
+    },
+    {
+      key: "score_details" as keyof SearchMemory,
+      label: "Embedding",
       width: 80,
-      render: (value: number | undefined) =>
-        typeof value === "number" ? value.toFixed(2) : "--",
+      render: (_value: SearchMemory["score_details"], row: SearchMemory) =>
+        formatScore(row.score_details?.semantic_score),
+    },
+    {
+      key: "score_details" as keyof SearchMemory,
+      label: "BM25",
+      width: 70,
+      render: (_value: SearchMemory["score_details"], row: SearchMemory) =>
+        formatScore(row.score_details?.bm25_score),
+    },
+    {
+      key: "score_details" as keyof SearchMemory,
+      label: "Entity",
+      width: 70,
+      render: (_value: SearchMemory["score_details"], row: SearchMemory) =>
+        formatScore(row.score_details?.entity_boost),
     },
     {
       key: "created_at" as keyof SearchMemory,
@@ -197,7 +223,7 @@ export default function PlaygroundPage() {
       </Card>
 
       {isLoading ? (
-        <TableSkeleton rows={5} columns={4} />
+        <TableSkeleton rows={5} columns={7} />
       ) : !hasSearched ? (
         <EmptyState
           title="Search memories"
@@ -267,8 +293,36 @@ export default function PlaygroundPage() {
                     <Label className="text-xs text-onSurface-default-tertiary">
                       Score
                     </Label>
-                    <p className="text-sm">{selectedMemory.score.toFixed(2)}</p>
+                    <p className="text-sm">{formatScore(selectedMemory.score)}</p>
                   </div>
+                )}
+                {selectedMemory.score_details && (
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-onSurface-default-tertiary">
+                        Embedding
+                      </Label>
+                      <p className="text-sm">
+                        {formatScore(selectedMemory.score_details.semantic_score)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-onSurface-default-tertiary">
+                        BM25
+                      </Label>
+                      <p className="text-sm">
+                        {formatScore(selectedMemory.score_details.bm25_score)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-onSurface-default-tertiary">
+                        Entity
+                      </Label>
+                      <p className="text-sm">
+                        {formatScore(selectedMemory.score_details.entity_boost)}
+                      </p>
+                    </div>
+                  </>
                 )}
                 {selectedMemory.agent_id && (
                   <div className="space-y-1">

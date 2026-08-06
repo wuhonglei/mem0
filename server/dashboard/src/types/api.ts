@@ -7,9 +7,20 @@ export interface Memory {
   updated_at?: string;
 }
 
+export interface SearchScoreDetails {
+  semantic_score?: number;
+  bm25_score?: number;
+  entity_boost?: number;
+  raw_score?: number;
+  max_possible_score?: number;
+  final_score?: number;
+  threshold?: number;
+}
+
 export interface SearchMemory extends Memory {
   score?: number;
   run_id?: string;
+  score_details?: SearchScoreDetails;
 }
 
 export interface ApiKey {
