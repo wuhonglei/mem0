@@ -480,7 +480,12 @@ def _add_candidate(
     priority: int,
 ) -> None:
     cleaned = _clean_text(text)
-    if not cleaned or len(cleaned) <= 2 or _has_artifacts(cleaned):
+    if not cleaned or _has_artifacts(cleaned):
+        return
+    # For CJK text, 2 characters is often meaningful (e.g., person names)
+    # For non-CJK text, require at least 3 characters
+    min_len = 2 if _has_cjk(cleaned) else 3
+    if len(cleaned) < min_len:
         return
     candidates.append(
         _EntityCandidate(
@@ -718,7 +723,11 @@ def _resolve_candidates(candidates: list[_EntityCandidate]) -> list[tuple[str, s
     for candidate in ordered:
         if any(
             _spans_overlap(candidate, existing)
-            and not (candidate.entity_type == "TOPIC" and " " in candidate.text and existing.entity_type == "PROPER")
+            and not (
+                candidate.entity_type == "TOPIC"
+                and len(candidate.text) > len(existing.text)  # multi-word/multi-char TOPIC overrides single PROPER
+                and existing.entity_type == "PROPER"
+            )
             for existing in accepted
         ):
             continue
@@ -748,25 +757,196 @@ def _extract_entities_from_doc(doc) -> list[tuple[str, str]]:
     return _resolve_candidates(candidates)
 
 
-def extract_entities(text: str) -> list[tuple[str, str]]:
-    """Extract typed entity candidates from text."""
-    from mem0.utils.spacy_models import get_nlp_full
+# ─── CJK / Chinese entity extraction ─────────────────────────────────────────
 
-    nlp = get_nlp_full()
-    if nlp is None:
+_CJK_RE = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+')
+_SEGMENT_RE = re.compile(r'([\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+)')
+
+# Chinese stop words and generic words to exclude from entities
+_ZH_GENERIC_WORDS = {
+    "用户", "我们", "他们", "自己", "这个", "那个", "什么", "怎么",
+    "可以", "需要", "应该", "已经", "还是", "因为", "所以", "但是",
+    "如果", "虽然", "或者", "以及", "关于", "对于", "一些", "一个",
+    "比较", "非常", "可能", "已经", "正在", "之后", "之前", "时候",
+    "东西", "事情", "方面", "地方", "情况", "问题", "方式", "方法",
+}
+
+
+def _has_cjk(text: str) -> bool:
+    return bool(_CJK_RE.search(text))
+
+
+def _extract_zh_entities(doc) -> list[tuple[str, str]]:
+    """Extract entities from a Chinese spaCy Doc.
+
+    Uses NER labels and noun phrase patterns specific to Chinese.
+    """
+    candidates: list[_EntityCandidate] = []
+
+    # 1. NER entities (PERSON, GPE, ORG, etc.)
+    for ent in doc.ents:
+        if ent.label_ in _REJECTED_NER_LABELS:
+            continue
+        text = ent.text.strip()
+        if len(text) < 2 or text in _ZH_GENERIC_WORDS:
+            continue
+        _add_candidate(candidates, "PROPER", text, "zh_ner", ent.start, ent.end, 0.9, 0)
+
+    # 2. Quoted text
+    _add_quoted_candidates(doc.text, candidates)
+
+    # 3. Chinese noun phrases via dependency parsing and linear adjacency
+    #    Since noun_chunks is not available for zh, we build phrases manually
+    tokens = list(doc)
+    used_spans: set[tuple[int, int]] = set()
+
+    for i, tok in enumerate(tokens):
+        if tok.pos_ not in ("NOUN", "PROPN"):
+            continue
+        if tok.text in _ZH_GENERIC_WORDS:
+            continue
+
+        # Build compound noun phrase: collect modifiers
+        phrase_tokens = [tok]
+
+        # Look left for dependency-based modifiers
+        for child in tok.children:
+            if child.i < tok.i and child.dep_ in (
+                "amod", "compound", "nmod", "nmod:assmod",
+                "nmod:prep", "compound:nn", "advmod:rcomp",
+            ):
+                if child.text not in _ZH_GENERIC_WORDS:
+                    phrase_tokens.append(child)
+
+        # Linear adjacency: check if preceding token is a VERB used as modifier
+        # e.g., "咖喱" (VERB) + "牛肉" (NOUN) where spaCy parses them separately
+        if i > 0:
+            prev = tokens[i - 1]
+            if prev.pos_ == "VERB" and prev.text not in _ZH_GENERIC_WORDS and len(prev.text) >= 2:
+                # Check if this VERB acts as a modifier (advmod:rcomp or similar)
+                if prev.dep_ in ("advmod:rcomp", "compound") or prev.head == tok or prev.head == tok.head:
+                    if prev not in phrase_tokens:
+                        phrase_tokens.append(prev)
+
+        # Sort by position
+        phrase_tokens.sort(key=lambda t: t.i)
+
+        # Check if this is a meaningful phrase
+        phrase_text = "".join(t.text for t in phrase_tokens)
+
+        # Skip if too short or just a generic word
+        if len(phrase_text) < 2:
+            continue
+
+        # Skip if all tokens are generic
+        if all(t.text in _ZH_GENERIC_WORDS for t in phrase_tokens):
+            continue
+
+        start = phrase_tokens[0].i
+        end = phrase_tokens[-1].i + 1
+        span_key = (start, end)
+
+        if span_key not in used_spans:
+            used_spans.add(span_key)
+            # Multi-word phrases get TOPIC, single proper nouns get PROPER
+            if len(phrase_tokens) > 1:
+                _add_candidate(candidates, "TOPIC", phrase_text, "zh_noun_phrase", start, end, 0.6, 4)
+            elif tok.pos_ == "PROPN":
+                _add_candidate(candidates, "PROPER", phrase_text, "zh_proper_noun", start, end, 0.8, 2)
+            elif tok.pos_ == "NOUN" and len(phrase_text) >= 2:
+                _add_candidate(candidates, "TOPIC", phrase_text, "zh_noun", start, end, 0.5, 4)
+
+    return _resolve_candidates(candidates)
+
+
+def extract_entities(text: str) -> list[tuple[str, str]]:
+    """Extract typed entity candidates from text.
+
+    Supports mixed Chinese-English text by splitting into CJK and non-CJK
+    segments, processing each with the appropriate spaCy model.
+    """
+    if not text or not text.strip():
         return []
-    return _extract_entities_from_doc(nlp(text))
+
+    # Pure English path
+    if not _has_cjk(text):
+        from mem0.utils.spacy_models import get_nlp_full
+
+        nlp = get_nlp_full()
+        if nlp is None:
+            return []
+        return _extract_entities_from_doc(nlp(text))
+
+    # Pure Chinese or mixed text
+    segments = _SEGMENT_RE.split(text)
+    all_entities: list[tuple[str, str]] = []
+
+    from mem0.utils.spacy_models import get_nlp_full, get_nlp_zh_full
+
+    nlp_en = get_nlp_full()
+    nlp_zh = get_nlp_zh_full()
+
+    for seg in segments:
+        if not seg.strip():
+            continue
+
+        if _has_cjk(seg):
+            # Chinese segment
+            if nlp_zh is not None:
+                doc = nlp_zh(seg)
+                all_entities.extend(_extract_zh_entities(doc))
+        else:
+            # English segment
+            if nlp_en is not None:
+                doc = nlp_en(seg)
+                all_entities.extend(_extract_entities_from_doc(doc))
+
+    # Deduplicate across segments
+    seen: dict[str, tuple[str, str]] = {}
+    for entity_type, entity_text in all_entities:
+        key = entity_text.strip().lower()
+        if key not in seen:
+            seen[key] = (entity_type, entity_text)
+
+    return list(seen.values())
 
 
 def extract_entities_batch(texts: list[str], batch_size: int = 32) -> list[list[tuple[str, str]]]:
-    """Extract typed entity candidates from multiple texts."""
+    """Extract typed entity candidates from multiple texts.
+
+    Handles mixed Chinese-English by routing each text through the
+    appropriate model (en_core_web_sm or zh_core_web_sm).
+    """
     if not texts:
         return []
 
-    from mem0.utils.spacy_models import get_nlp_full
+    from mem0.utils.spacy_models import get_nlp_full, get_nlp_zh_full
 
-    nlp = get_nlp_full()
-    if nlp is None:
-        return [[] for _ in texts]
+    nlp_en = get_nlp_full()
+    nlp_zh = get_nlp_zh_full()
 
-    return [_extract_entities_from_doc(doc) for doc in nlp.pipe(texts, batch_size=batch_size)]
+    # Separate texts by language
+    results: list[list[tuple[str, str]]] = [[] for _ in texts]
+    en_indices: list[int] = []
+    zh_indices: list[int] = []
+
+    for i, text in enumerate(texts):
+        if not text or not text.strip():
+            continue
+        if _has_cjk(text):
+            zh_indices.append(i)
+        else:
+            en_indices.append(i)
+
+    # Process English texts in batch
+    if en_indices and nlp_en is not None:
+        en_texts = [texts[i] for i in en_indices]
+        for idx, doc in zip(en_indices, nlp_en.pipe(en_texts, batch_size=batch_size)):
+            results[idx] = _extract_entities_from_doc(doc)
+
+    # Process Chinese/mixed texts individually (need segment splitting)
+    if zh_indices:
+        for idx in zh_indices:
+            results[idx] = extract_entities(texts[idx])
+
+    return results

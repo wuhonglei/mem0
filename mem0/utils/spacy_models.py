@@ -139,3 +139,32 @@ def get_nlp_zh():
             _load_failed_zh = True
             return None
     return _nlp_zh
+
+
+_nlp_zh_full = None
+_load_failed_zh_full = False
+
+
+def get_nlp_zh_full():
+    """Return spaCy zh_core_web_sm model with all pipelines for entity extraction."""
+    global _nlp_zh_full, _load_failed_zh_full
+    if _load_failed_zh_full:
+        return None
+    if _nlp_zh_full is not None:
+        return _nlp_zh_full
+    with _lock:
+        if _nlp_zh_full is not None:
+            return _nlp_zh_full
+        if _load_failed_zh_full:
+            return None
+        try:
+            _ensure_zh_model_available()
+            import spacy
+
+            _nlp_zh_full = spacy.load("zh_core_web_sm")
+            logger.info("spaCy zh full model loaded")
+        except Exception as e:
+            logger.warning(f"Failed to load spaCy zh full model: {e}")
+            _load_failed_zh_full = True
+            return None
+    return _nlp_zh_full
