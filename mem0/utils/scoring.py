@@ -54,12 +54,29 @@ def normalize_bm25(raw_score: float, midpoint: float, steepness: float) -> float
     return 1.0 / (1.0 + math.exp(-steepness * (raw_score - midpoint)))
 
 
-def normalize_bm25_scores(bm25_scores: Dict[str, float]) -> Dict[str, float]:
-    """Normalize BM25 scores to [0, 1] using percentile-based scaling.
+# When the best BM25 raw score is below this threshold, the entire BM25
+# contribution is proportionally dampened.  PostgreSQL ts_rank_cd returns
+# ~0.1 for a single keyword match and ~0.2 for a double match, so 0.2
+# means "a single match gets 50 % confidence, a double match gets 100 %".
+_BM25_CONFIDENCE_THRESHOLD = 0.2
 
-    The highest raw score maps to ~0.95, and others scale proportionally.
-    This is robust for any score distribution (e.g. PostgreSQL ts_rank_cd
-    returning 0.0-0.5, or Qdrant BM25 returning 0-20+).
+
+def normalize_bm25_scores(bm25_scores: Dict[str, float]) -> Dict[str, float]:
+    """Normalize BM25 scores to [0, 1] with confidence decay.
+
+    Two-stage normalization:
+      1. **Percentile scaling** — highest raw score maps to ~0.95, others
+         scale proportionally.  This handles any score range (PostgreSQL
+         ts_rank_cd 0-0.5, Qdrant BM25 0-20+, etc.).
+      2. **Confidence decay** — when the best raw score is *low*, all
+         normalized scores are dampened so weak keyword matches cannot
+         dominate the final ranking.
+
+    The confidence factor is ``min(max_raw / threshold, 1.0)``.
+    With threshold=0.2 (a typical single CJK term match in PostgreSQL):
+      - max_raw=0.1  → confidence=0.50 → top score ≈ 0.475
+      - max_raw=0.2  → confidence=1.00 → top score ≈ 0.950
+      - max_raw=0.5  → confidence=1.00 → top score ≈ 0.950
 
     Args:
         bm25_scores: Dict of memory_id -> raw BM25 score.
@@ -74,7 +91,8 @@ def normalize_bm25_scores(bm25_scores: Dict[str, float]) -> Dict[str, float]:
     if max_score <= 0:
         return {k: 0.0 for k in bm25_scores}
 
-    return {k: min(v / max_score * 0.95, 1.0) for k, v in bm25_scores.items()}
+    confidence = min(max_score / _BM25_CONFIDENCE_THRESHOLD, 1.0)
+    return {k: min(v / max_score * 0.95 * confidence, 1.0) for k, v in bm25_scores.items()}
 
 
 ENTITY_BOOST_WEIGHT = 0.5
