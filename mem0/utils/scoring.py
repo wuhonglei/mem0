@@ -2,8 +2,8 @@
 Scoring utilities for hybrid retrieval.
 
 Provides:
-- **BM25 normalization**: Sigmoid normalization of raw BM25 scores to [0, 1].
-- **BM25 parameter selection**: Query-length-adaptive sigmoid parameters.
+- **BM25 normalization**: Percentile-based normalization of raw BM25 scores to [0, 1].
+- **BM25 parameter selection**: Query-length-adaptive sigmoid parameters (legacy fallback).
 - **Additive scoring**: Combined scoring with semantic + BM25 + entity boost.
 """
 
@@ -52,6 +52,29 @@ def normalize_bm25(raw_score: float, midpoint: float, steepness: float) -> float
         Normalized score in range [0, 1].
     """
     return 1.0 / (1.0 + math.exp(-steepness * (raw_score - midpoint)))
+
+
+def normalize_bm25_scores(bm25_scores: Dict[str, float]) -> Dict[str, float]:
+    """Normalize BM25 scores to [0, 1] using percentile-based scaling.
+
+    The highest raw score maps to ~0.95, and others scale proportionally.
+    This is robust for any score distribution (e.g. PostgreSQL ts_rank_cd
+    returning 0.0-0.5, or Qdrant BM25 returning 0-20+).
+
+    Args:
+        bm25_scores: Dict of memory_id -> raw BM25 score.
+
+    Returns:
+        Dict of memory_id -> normalized score in [0, 1].
+    """
+    if not bm25_scores:
+        return {}
+
+    max_score = max(bm25_scores.values())
+    if max_score <= 0:
+        return {k: 0.0 for k in bm25_scores}
+
+    return {k: min(v / max_score * 0.95, 1.0) for k, v in bm25_scores.items()}
 
 
 ENTITY_BOOST_WEIGHT = 0.5

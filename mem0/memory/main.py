@@ -68,8 +68,7 @@ from mem0.utils.factory import (
 from mem0.utils.lemmatization import lemmatize_for_bm25
 from mem0.utils.scoring import (
     ENTITY_BOOST_WEIGHT,
-    get_bm25_params,
-    normalize_bm25,
+    normalize_bm25_scores,
     score_and_rank,
 )
 from mem0.vector_stores.base import VectorStoreBase
@@ -1647,12 +1646,13 @@ class Memory(MemoryBase):
         # Step 5: Compute BM25 scores from keyword results
         bm25_scores = {}
         if keyword_results is not None:
-            midpoint, steepness = get_bm25_params(query, lemmatized=query_lemmatized)
             for mem in keyword_results:
                 mem_id = str(mem.id) if hasattr(mem, 'id') else str(mem.get('id', ''))
                 raw_score = mem.score if hasattr(mem, 'score') else mem.get('score', 0)
                 if raw_score and raw_score > 0:
-                    bm25_scores[mem_id] = normalize_bm25(raw_score, midpoint, steepness)
+                    bm25_scores[mem_id] = raw_score
+            # Percentile-based normalization: highest raw score → ~0.95
+            bm25_scores = normalize_bm25_scores(bm25_scores)
 
         # Step 6: Compute entity boosts
         entity_boosts = {}
@@ -3306,12 +3306,13 @@ class AsyncMemory(MemoryBase):
         # Step 5: Compute BM25 scores
         bm25_scores = {}
         if keyword_results is not None:
-            midpoint, steepness = get_bm25_params(query, lemmatized=query_lemmatized)
             for mem in keyword_results:
                 mem_id = str(mem.id) if hasattr(mem, 'id') else str(mem.get('id', ''))
                 raw_score = mem.score if hasattr(mem, 'score') else mem.get('score', 0)
                 if raw_score and raw_score > 0:
-                    bm25_scores[mem_id] = normalize_bm25(raw_score, midpoint, steepness)
+                    bm25_scores[mem_id] = raw_score
+            # Percentile-based normalization: highest raw score → ~0.95
+            bm25_scores = normalize_bm25_scores(bm25_scores)
 
         # Step 6: Compute entity boosts
         entity_boosts = {}
