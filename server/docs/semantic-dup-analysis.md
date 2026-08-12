@@ -6,11 +6,12 @@
 
 ## 总览
 
-| 指标 | 数值 |
-|------|------|
-| 总记忆数 | 4655 |
-| 向量维度 | 1024 |
-| 检测耗时 | ~30秒 (全量矩阵计算) |
+| 指标 | 清理前 | 清理后 |
+|------|--------|--------|
+| 记忆总数 | 4655 | 4498 |
+| 向量维度 | 1024 | 1024 |
+| 检测耗时 | ~30秒 | - |
+| 清理删除 | - | 157 条 (3.4%) |
 
 ## 相似度分布
 
@@ -103,7 +104,47 @@
 **条件**: 发现的事实冲突（儿子名字等）
 **策略**: 核实正确信息，删除错误版本
 
+## 执行记录
+
+### 2026-08-12 清理 (sim > 0.95)
+
+| 项目 | 数值 |
+|------|------|
+| 聚类数 | 125 |
+| 保留 | 125 条（每组最长文本） |
+| 删除 | 157 条 |
+| 清理前 | 4655 |
+| 清理后 | 4498 |
+| 减少比例 | 3.4% |
+| 备份表 | `memories_cleanup_archive` |
+| 清理脚本 | `server/scripts/cleanup_semantic_duplicates.py` |
+
+**高频聚类 Top 10**:
+
+| 话题 | 聚合前条数 | 聚合后 |
+|------|-----------|--------|
+| 理想i6售价 | 6 | 1 |
+| Zalando一面经历 | 5 | 1 |
+| 中信银行信用卡中心加班 | 4 | 1 |
+| 深圳失业保险线上办理 | 4 | 1 |
+| Langfuse 定位 | 4 | 1 |
+| 深圳天气记录 | 5 | 1 |
+| 明月公园 | 3 | 1 |
+| Hermes Agent 安装 | 3 | 1 |
+| 深圳中洲湾交房 | 4 | 1 |
+| 感冒饮食建议 | 3 | 1 |
+
+**回滚 SQL**:
+
+```sql
+INSERT INTO memories (id, vector, payload)
+SELECT id, vector, payload
+FROM memories_cleanup_archive
+WHERE reason = 'semantic_duplicate_sim_gt_0.95';
+```
+
 ## 附录
 
-- 原始数据: `server/docs/semantic-dup-report.json`（374KB，含所有 >0.90 的记忆对详情）
+- 原始数据: `server/docs/semantic-dup-report.json`（366KB，含所有 >0.90 的记忆对详情）
 - 检测脚本: `server/scripts/detect_semantic_duplicates.py`
+- 清理脚本: `server/scripts/cleanup_semantic_duplicates.py`
