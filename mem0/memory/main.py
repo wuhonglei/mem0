@@ -1773,7 +1773,7 @@ class Memory(MemoryBase):
 
             def _search_entity(entity_text, embedding):
                 return entity_store.search(
-                    query=entity_text, vectors=embedding, top_k=500, filters=search_filters
+                    query=entity_text, vectors=embedding, top_k=20, filters=search_filters
                 )
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:

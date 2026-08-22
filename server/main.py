@@ -152,6 +152,19 @@ _llm_config: Dict[str, Any] = {
 if MEM0_LLM_BASE_URL:
     _llm_config["openai_base_url"] = MEM0_LLM_BASE_URL
 
+DEDUP_INSTRUCTIONS = """DEDUPLICATION RULES (highest priority — override general extraction guidelines):
+
+1. SEMANTIC DEDUP: If new information is semantically equivalent to an Existing Memory — same fact, preference, habit, or opinion expressed in different words — DO NOT extract it. Skip entirely.
+
+2. CONSOLIDATE, NOT FRAGMENT: A single preference or fact should live in ONE memory. Do not split "user likes detailed answers" into multiple memories about answer style, verbosity, or formatting preference.
+
+3. UPDATE OVER CREATE: If new messages confirm, refine, or slightly extend an existing memory, prefer updating the existing memory (via ADD with linked_memory_ids) rather than creating a separate new one.
+
+4. EXACT SCENARIO SKIP: If the user is having a conversation ABOUT their answer preferences (e.g. "I like concise" → "no, be more detailed"), this is a SINGLE evolving preference — extract at most ONE final memory capturing the settled preference, not one per message.
+
+5. ANTI-ECHO: If both user and assistant express the same fact, extract only once from the user's version. Do not create a separate memory from the assistant's restatement.
+"""
+
 DEFAULT_CONFIG = {
     "version": "v1.1",
     "vector_store": {
@@ -161,12 +174,19 @@ DEFAULT_CONFIG = {
     "llm": {"provider": "openai", "config": _llm_config},
     "embedder": {"provider": "openai", "config": _embedder_config},
     "history_db_path": HISTORY_DB_PATH,
+    "custom_instructions": DEDUP_INSTRUCTIONS,
 }
 
 
 set_session_factory(SessionLocal)
 initialize_state(DEFAULT_CONFIG)
 
+# Eagerly load spaCy models so the first search request is not slow (~5s cold start)
+try:
+    from mem0.utils.spacy_models import preload_all as _preload_spacy
+    _preload_spacy()
+except Exception:
+    pass  # non-fatal; models will load lazily on first use
 
 app = FastAPI(
     title="Mem0 REST APIs",

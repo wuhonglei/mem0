@@ -168,3 +168,21 @@ def get_nlp_zh_full():
             _load_failed_zh_full = True
             return None
     return _nlp_zh_full
+
+
+def preload_all() -> None:
+    """Load all spaCy models eagerly so the first user request is not slow.
+
+    Safe to call multiple times — already-loaded models are returned instantly.
+    Failures are logged at warning level and never raise.
+    """
+    for name, loader in [
+        ("en_core_web_sm (full)", get_nlp_full),
+        ("en_core_web_sm (lemma)", get_nlp_lemma),
+        ("zh_core_web_sm (tokenize)", get_nlp_zh),
+        ("zh_core_web_sm (full)", get_nlp_zh_full),
+    ]:
+        try:
+            loader()
+        except Exception as e:
+            logger.warning(f"Preload failed for {name}: {e}")
