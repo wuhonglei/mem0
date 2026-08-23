@@ -44,7 +44,9 @@ class OpenAIEmbedding(EmbeddingBase):
         Returns:
             list: The embedding vector.
         """
-        text = text.replace("\n", " ")
+        text = text.replace("\n", " ").strip()
+        if not text:
+            raise ValueError("Cannot embed empty text")
         kwargs = {
             "input": [text],
             "model": self.config.model,
@@ -58,12 +60,23 @@ class OpenAIEmbedding(EmbeddingBase):
         """Embed multiple texts in a single OpenAI API call.
 
         Automatically chunks into batches of 100 to stay within API limits.
+        Filters out empty/whitespace-only texts to prevent 400 errors from
+        backends like DashScope. Returns a list aligned with the *original*
+        input; empty positions get a None placeholder.
         """
         MAX_BATCH = 100
-        texts = [text.replace("\n", " ") for text in texts]
+        original_len = len(texts)
+        cleaned = [text.replace("\n", " ").strip() for text in texts]
+
+        # Build index of non-empty texts for actual embedding
+        valid_indices = [i for i, t in enumerate(cleaned) if t]
+        if not valid_indices:
+            raise ValueError("Cannot embed batch: all texts are empty")
+
+        valid_texts = [cleaned[i] for i in valid_indices]
         all_embeddings = []
-        for i in range(0, len(texts), MAX_BATCH):
-            chunk = texts[i : i + MAX_BATCH]
+        for i in range(0, len(valid_texts), MAX_BATCH):
+            chunk = valid_texts[i : i + MAX_BATCH]
             kwargs = {
                 "input": chunk,
                 "model": self.config.model,
@@ -73,9 +86,15 @@ class OpenAIEmbedding(EmbeddingBase):
                 kwargs["dimensions"] = self.config.embedding_dims
             response = self.client.embeddings.create(**kwargs)
             all_embeddings.extend(item.embedding for item in sorted(response.data, key=lambda x: x.index))
-        if len(all_embeddings) != len(texts):
+
+        # Map back to original positions; empty texts get None
+        result = [None] * original_len
+        for pos, embedding in zip(valid_indices, all_embeddings):
+            result[pos] = embedding
+
+        if len(all_embeddings) != len(valid_texts):
             raise ValueError(
-                f"OpenAI embed_batch() returned {len(all_embeddings)} embeddings for {len(texts)} texts"
+                f"OpenAI embed_batch() returned {len(all_embeddings)} embeddings for {len(valid_texts)} non-empty texts"
                 f" using model '{self.config.model}'"
             )
-        return all_embeddings
+        return result

@@ -32,6 +32,8 @@ class OpenAILLM(LLMBase):
                 reasoning_effort=getattr(config, 'reasoning_effort', None),
                 http_client_proxies=config.http_client_proxies,
                 is_reasoning_model=getattr(config, 'is_reasoning_model', None),
+                timeout=getattr(config, 'timeout', None),
+                extra_body=getattr(config, 'extra_body', None),
             )
 
         super().__init__(config)
@@ -45,12 +47,13 @@ class OpenAILLM(LLMBase):
                 base_url=self.config.openrouter_base_url
                 or os.getenv("OPENROUTER_API_BASE")
                 or "https://openrouter.ai/api/v1",
+                timeout=self.config.timeout,
             )
         else:
             api_key = self.config.api_key or os.getenv("OPENAI_API_KEY")
             base_url = self.config.openai_base_url or os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
 
-            self.client = OpenAI(api_key=api_key, base_url=base_url)
+            self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=self.config.timeout)
 
     def _parse_response(self, response, tools):
         """
@@ -138,6 +141,8 @@ class OpenAILLM(LLMBase):
         if tools:  # TODO: Remove tools if no issues found with new memory addition logic
             params["tools"] = tools
             params["tool_choice"] = tool_choice
+        if self.config.extra_body:
+            params["extra_body"] = self.config.extra_body
         response = self.client.chat.completions.create(**params)
         parsed_response = self._parse_response(response, tools)
         if self.config.response_callback:

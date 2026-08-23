@@ -33,6 +33,8 @@ class OpenAIConfig(BaseLlmConfig):
         store: Optional[bool] = None,
         # Response monitoring callback
         response_callback: Optional[Callable[[Any, dict, dict], None]] = None,
+        timeout: Optional[float] = None,
+        extra_body: Optional[dict] = None,
     ):
         """
         Initialize OpenAI configuration.
@@ -77,6 +79,8 @@ class OpenAIConfig(BaseLlmConfig):
             reasoning_effort=reasoning_effort,
             http_client_proxies=http_client_proxies,
             is_reasoning_model=is_reasoning_model,
+            timeout=timeout,
+            extra_body=extra_body,
         )
 
         # OpenAI-specific parameters

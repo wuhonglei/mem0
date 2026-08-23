@@ -26,6 +26,8 @@ class BaseLlmConfig(ABC):
         reasoning_effort: Optional[str] = None,
         http_client_proxies: Optional[Union[Dict, str]] = None,
         is_reasoning_model: Optional[bool] = None,
+        timeout: Optional[float] = None,
+        extra_body: Optional[Dict] = None,
     ):
         """
         Initialize a base configuration class instance for the LLM.
@@ -63,6 +65,13 @@ class BaseLlmConfig(ABC):
                 deployments with custom/versioned model names (e.g. Azure
                 "gpt-5.4-nano-2026-03-17") that the name-based heuristic cannot
                 recognize. Defaults to None
+            timeout: HTTP request timeout in seconds for the LLM API client.
+                When None (default), uses the SDK's built-in default (600s for
+                the OpenAI client). Set to a lower value (e.g., 120) to fail
+                fast on slow backends and trigger retries sooner.
+            extra_body: Additional parameters to pass in the request body.
+                Useful for provider-specific features like Qwen's
+                ``enable_thinking`` flag. Defaults to None (not sent).
         """
         self.model = model
         self.temperature = temperature
@@ -76,3 +85,5 @@ class BaseLlmConfig(ABC):
         self.is_reasoning_model = is_reasoning_model
         self.http_client_proxies = http_client_proxies
         self.http_client = build_http_client(http_client_proxies)
+        self.timeout = timeout
+        self.extra_body = extra_body

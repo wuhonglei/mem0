@@ -605,8 +605,19 @@ class Memory(MemoryBase):
         """Upsert an entity into the entity store, linking it to a memory."""
         try:
             entity_embedding = self.embedding_model.embed(entity_text, "add")
+            self._upsert_entity_with_embedding(entity_text, entity_type, memory_id, filters, entity_embedding)
+        except Exception as e:
+            logger.warning(f"Entity upsert failed for '{entity_text}': {e}")
+
+    def _upsert_entity_with_embedding(self, entity_text, entity_type, memory_id, filters, entity_embedding, existing_entities_map=None):
+        """Upsert an entity with a pre-computed embedding. Optionally reuse a cached entity map."""
+        try:
             search_filters = {k: v for k, v in filters.items() if k in ("user_id", "agent_id", "run_id") and v}
-            exact_match = self._existing_entities_by_text(search_filters).get(self._normalize_entity_text(entity_text))
+
+            if existing_entities_map is not None:
+                exact_match = existing_entities_map.get(self._normalize_entity_text(entity_text))
+            else:
+                exact_match = self._existing_entities_by_text(search_filters).get(self._normalize_entity_text(entity_text))
 
             existing = []
             if exact_match is None:
@@ -667,39 +678,73 @@ class Memory(MemoryBase):
         try:
             listed = self.entity_store.list(filters=search_filters, top_k=10000)
             rows = listed[0] if isinstance(listed, (list, tuple)) and listed and isinstance(listed[0], list) else listed
+
+            # Phase 1: Filter to only rows that actually reference this memory_id
+            # (avoids embedding thousands of irrelevant entities)
+            affected_rows = []
+            unaffected_rows = []
             for row in rows or []:
                 try:
                     payload = getattr(row, "payload", None) or {}
                     linked = payload.get("linked_memory_ids", [])
                     if not isinstance(linked, list) or memory_id not in linked:
                         continue
-                    remaining = [mid for mid in linked if mid != memory_id]
-                    if not remaining:
-                        try:
-                            self.entity_store.delete(vector_id=row.id)
-                        except Exception as e:
-                            logger.debug(f"Entity delete failed for id={row.id}: {e}")
-                    else:
-                        entity_text = payload.get("data")
-                        if not isinstance(entity_text, str) or not entity_text:
-                            logger.debug(f"Entity id={row.id} missing 'data'; skipping update during cleanup")
-                            continue
-                        try:
-                            vec = self.embedding_model.embed(entity_text, "update")
-                        except Exception as e:
-                            logger.debug(f"Entity re-embed failed for '{entity_text}': {e}")
-                            continue
-                        new_payload = {**payload, "linked_memory_ids": remaining}
-                        try:
-                            self.entity_store.update(
-                                vector_id=row.id,
-                                vector=vec,
-                                payload=new_payload,
-                            )
-                        except Exception as e:
-                            logger.debug(f"Entity update failed for id={row.id}: {e}")
+                    affected_rows.append(row)
                 except Exception as e:
-                    logger.debug(f"Entity cleanup error: {e}")
+                    logger.debug(f"Entity filter error: {e}")
+
+            if not affected_rows:
+                return
+
+            # Phase 2: Collect entity texts that need re-embedding (only rows with remaining links)
+            to_reembed = []  # (row, entity_text, remaining_ids)
+            to_delete = []   # row ids where remaining is empty
+
+            for row in affected_rows:
+                payload = getattr(row, "payload", None) or {}
+                linked = payload.get("linked_memory_ids", [])
+                remaining = [mid for mid in linked if mid != memory_id]
+                if not remaining:
+                    to_delete.append(row.id)
+                else:
+                    entity_text = payload.get("data")
+                    if isinstance(entity_text, str) and entity_text:
+                        to_reembed.append((row, entity_text, remaining))
+
+            # Phase 3: Batch delete orphaned entities
+            for row_id in to_delete:
+                try:
+                    self.entity_store.delete(vector_id=row_id)
+                except Exception as e:
+                    logger.debug(f"Entity delete failed for id={row_id}: {e}")
+
+            # Phase 4: Batch re-embed and update entities with remaining links
+            if to_reembed:
+                entity_texts = [item[1] for item in to_reembed]
+                try:
+                    embeddings = self.embedding_model.embed_batch(entity_texts, "update")
+                except Exception:
+                    # Fallback: embed individually
+                    embeddings = []
+                    for t in entity_texts:
+                        try:
+                            embeddings.append(self.embedding_model.embed(t, "update"))
+                        except Exception:
+                            embeddings.append(None)
+
+                for (row, entity_text, remaining), vec in zip(to_reembed, embeddings):
+                    if vec is None:
+                        continue
+                    new_payload = {**getattr(row, "payload", {}), "linked_memory_ids": remaining}
+                    try:
+                        self.entity_store.update(
+                            vector_id=row.id,
+                            vector=vec,
+                            payload=new_payload,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Entity update failed for id={row.id}: {e}")
+
         except Exception as e:
             logger.warning(f"Entity store cleanup failed for memory_id={memory_id}: {e}")
 
@@ -714,13 +759,40 @@ class Memory(MemoryBase):
             if not entities:
                 return
             seen = set()
+            deduped = []
             for entity_type, entity_text in entities:
                 key = self._normalize_entity_text(entity_text)
                 if not key or key in seen:
                     continue
                 seen.add(key)
+                deduped.append((entity_type, entity_text))
+
+            if not deduped:
+                return
+
+            # Batch embed all entity texts at once (single API call instead of N)
+            entity_texts = [text for _, text in deduped]
+            try:
+                embeddings = self.embedding_model.embed_batch(entity_texts, "add")
+            except Exception:
+                # Fallback to individual embed
+                embeddings = [self.embedding_model.embed(t, "add") for t in entity_texts]
+
+            # Load entity map once and reuse for all upserts (avoids N x list(top_k=10000))
+            search_filters = {k: v for k, v in filters.items() if k in ("user_id", "agent_id", "run_id") and v}
+            try:
+                existing_entities_map = self._existing_entities_by_text(search_filters)
+            except Exception:
+                existing_entities_map = None
+
+            for (entity_type, entity_text), embedding in zip(deduped, embeddings):
+                if embedding is None:
+                    continue
                 try:
-                    self._upsert_entity(entity_text, entity_type, memory_id, filters)
+                    self._upsert_entity_with_embedding(
+                        entity_text, entity_type, memory_id, filters, embedding,
+                        existing_entities_map=existing_entities_map,
+                    )
                 except Exception as e:
                     logger.debug(f"Entity link failed for '{entity_text}': {e}")
         except Exception as e:
@@ -989,10 +1061,10 @@ class Memory(MemoryBase):
             return []
 
         # Phase 3: Batch embed all extracted memory texts
-        mem_texts = [m.get("text", "") for m in extracted_memories if m.get("text")]
+        mem_texts = [m.get("text", "").strip() for m in extracted_memories if m.get("text", "").strip()]
         try:
             mem_embeddings_list = self.embedding_model.embed_batch(mem_texts, "add")
-            embed_map = dict(zip(mem_texts, mem_embeddings_list))
+            embed_map = {t: e for t, e in zip(mem_texts, mem_embeddings_list) if e is not None}
         except Exception:
             # Fallback: embed individually
             embed_map = {}
@@ -1103,17 +1175,30 @@ class Memory(MemoryBase):
                 ordered_keys = list(global_entities.keys())
                 entity_texts = [global_entities[k][1] for k in ordered_keys]
 
-                # 7b: Single batch embed for all unique entities
-                try:
-                    entity_embeddings = self.embedding_model.embed_batch(entity_texts, "add")
-                except Exception:
-                    # Fallback: embed individually, use None for failures
-                    entity_embeddings = []
-                    for t in entity_texts:
-                        try:
-                            entity_embeddings.append(self.embedding_model.embed(t, "add"))
-                        except Exception:
-                            entity_embeddings.append(None)
+                # Filter out empty entity texts to prevent embedding 400 errors
+                valid_entity_indices = [i for i, t in enumerate(entity_texts) if t and t.strip()]
+                if not valid_entity_indices:
+                    logger.debug("All entity texts are empty after filtering, skipping entity embedding")
+                    entity_embeddings = [None] * len(entity_texts)
+                else:
+                    valid_entity_texts = [entity_texts[i] for i in valid_entity_indices]
+
+                    # 7b: Single batch embed for all unique entities
+                    try:
+                        valid_entity_embeddings = self.embedding_model.embed_batch(valid_entity_texts, "add")
+                    except Exception:
+                        # Fallback: embed individually, use None for failures
+                        valid_entity_embeddings = []
+                        for t in valid_entity_texts:
+                            try:
+                                valid_entity_embeddings.append(self.embedding_model.embed(t, "add"))
+                            except Exception:
+                                valid_entity_embeddings.append(None)
+
+                    # Map back to original positions
+                    entity_embeddings = [None] * len(entity_texts)
+                    for pos, emb in zip(valid_entity_indices, valid_entity_embeddings):
+                        entity_embeddings[pos] = emb
 
 
                 if len(entity_embeddings) != len(ordered_keys):

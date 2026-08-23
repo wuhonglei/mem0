@@ -124,6 +124,8 @@ MEM0_LLM_TEMPERATURE = float(os.environ.get("MEM0_LLM_TEMPERATURE", "0.2"))
 MEM0_EMBEDDER_MODEL = os.environ.get("MEM0_EMBEDDER_MODEL", DEFAULT_EMBEDDER_MODEL)
 MEM0_EMBEDDER_BASE_URL = os.environ.get("MEM0_EMBEDDER_BASE_URL")
 MEM0_EMBEDDER_DIMENSION = os.environ.get("MEM0_EMBEDDER_DIMENSION")
+MEM0_LLM_TIMEOUT = float(os.environ.get("MEM0_LLM_TIMEOUT", "120"))
+MEM0_LLM_EXTRA_BODY = os.environ.get("MEM0_LLM_EXTRA_BODY")
 
 _vector_store_config: Dict[str, Any] = {
     "host": POSTGRES_HOST,
@@ -148,9 +150,13 @@ _llm_config: Dict[str, Any] = {
     "api_key": OPENAI_API_KEY,
     "temperature": MEM0_LLM_TEMPERATURE,
     "model": MEM0_LLM_MODEL,
+    "timeout": MEM0_LLM_TIMEOUT,
 }
 if MEM0_LLM_BASE_URL:
     _llm_config["openai_base_url"] = MEM0_LLM_BASE_URL
+if MEM0_LLM_EXTRA_BODY:
+    import json as _json
+    _llm_config["extra_body"] = _json.loads(MEM0_LLM_EXTRA_BODY)
 
 DEDUP_INSTRUCTIONS = """DEDUPLICATION RULES (highest priority — override general extraction guidelines):
 
@@ -187,6 +193,27 @@ try:
     _preload_spacy()
 except Exception:
     pass  # non-fatal; models will load lazily on first use
+
+# Warm up pgvector HNSW index caches to avoid ~3s cold-start on first search
+try:
+    from server_state import get_memory_instance as _get_mem
+    _mem = _get_mem()
+    if hasattr(_mem, 'vector_store') and hasattr(_mem.vector_store, '_get_cursor'):
+        import psycopg
+        _pool = _mem.vector_store.connection_pool
+        with _pool.connection() as _conn:
+            with _conn.cursor() as _cur:
+                _cur.execute("SET hnsw.ef_search = 40")
+                # Touch memories HNSW index pages to load them into shared_buffers
+                _cur.execute(
+                    "SELECT id FROM memories ORDER BY vector <=> (SELECT vector FROM memories LIMIT 1) LIMIT 5"
+                )
+                # Touch memories_entities HNSW index (34k rows, ~456MB)
+                _cur.execute(
+                    "SELECT id FROM memories_entities ORDER BY vector <=> (SELECT vector FROM memories_entities LIMIT 1) LIMIT 5"
+                )
+except Exception:
+    pass  # non-fatal; index warms up on first real query
 
 app = FastAPI(
     title="Mem0 REST APIs",
