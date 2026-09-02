@@ -257,11 +257,14 @@ If the user is on a pre-current major (Python < 2, TS < 3, or a Platform call st
 - [ChatDev](https://docs.mem0.ai/integrations/chatdev) [Platform]: Use when the user is on ChatDev.
 - [Hermes](https://docs.mem0.ai/integrations/hermes) [Both]: Use when the user is on Hermes.
 - [Pi Agent](https://docs.mem0.ai/integrations/pi-agent) [Platform]: Use when adding persistent memory to Pi Agent with the Mem0 plugin.
+- [DeepSeek Harness](https://docs.mem0.ai/integrations/deepseek-plugin) [Platform]: Use when adding persistent memory to the DeepSeek Harness (Cordis) agent via the Mem0 plugin.
 - [OpenAI Agents SDK](https://docs.mem0.ai/integrations/openai-agents-sdk) [Platform]: Use when the user is on the OpenAI Agents SDK.
 - [Google AI ADK](https://docs.mem0.ai/integrations/google-ai-adk) [Platform]: Use when the user is on Google's Agent Development Kit.
 - [Mastra](https://docs.mem0.ai/integrations/mastra) [Platform]: Use when the user is on Mastra (TypeScript).
 - [OpenClaw](https://docs.mem0.ai/integrations/openclaw) [Both]: Use when wiring Mem0 into Claude Code or editors via OpenClaw.
 - [Vercel AI SDK](https://docs.mem0.ai/integrations/vercel-ai-sdk) [Both]: Use when the user is on the Vercel AI SDK.
+- [Vercel](https://docs.mem0.ai/integrations/vercel) [Platform]: Use when deploying on Vercel and installing Mem0 from the Vercel Marketplace.
+- [Strands Agents](https://docs.mem0.ai/integrations/strands) [Both]: Use when the user is on AWS Strands and wants a native MemoryStore.
 
 ### AI Coding Tools
 - [Claude Code](https://docs.mem0.ai/integrations/claude-code) [Both]: Use when wiring memory into Claude Code.
@@ -380,6 +383,16 @@ All API Reference docs describe Mem0 Platform REST endpoints (requires API key).
 - [Remove Project Member](https://docs.mem0.ai/api-reference/project/remove-project-member) [Platform]: Use when removing a member from a project.
 - [Delete Project](https://docs.mem0.ai/api-reference/project/delete-project) [Platform]: Use when removing a project.
 
+### Dream
+- [Get Dream Configuration](https://docs.mem0.ai/api-reference/dream/get-dream-config) [Platform]: Use when reading a project's Dream (memory synthesis) config and plan entitlements.
+- [Update Dream Configuration](https://docs.mem0.ai/api-reference/dream/update-dream-config) [Platform]: Use when enabling/disabling Synthesis or changing its mode for a project.
+- [Get Dream Stats](https://docs.mem0.ai/api-reference/dream/get-dream-stats) [Platform]: Use when fetching lifecycle and synthesis counts for the Dream dashboard.
+- [Get Dream Activity](https://docs.mem0.ai/api-reference/dream/get-dream-activity) [Platform]: Use when listing recent supersede/merge activity for a project.
+- [Get Dream Synthesis Runs](https://docs.mem0.ai/api-reference/dream/get-dream-runs) [Platform]: Use when listing synthesis runs and the memories they generated.
+- [Get Memories in a Dream Run](https://docs.mem0.ai/api-reference/dream/get-dream-run-memories) [Platform]: Use when paging the synthesized memories within a single run.
+- [Get a Synthesized Memory's Sources](https://docs.mem0.ai/api-reference/dream/get-dream-memory-sources) [Platform]: Use when tracing the source memories a synthesized memory was distilled from.
+- [Preview Dream Scope](https://docs.mem0.ai/api-reference/dream/dream-preview) [Platform]: Use when previewing what Synthesis would analyze for a project (no writes).
+
 ### Webhooks
 - [Create Webhook](https://docs.mem0.ai/api-reference/webhook/create-webhook) [Platform]: Use when registering a webhook endpoint.
 - [Get Webhook](https://docs.mem0.ai/api-reference/webhook/get-webhook) [Platform]: Use when fetching webhook config.
@@ -400,11 +413,17 @@ Source: https://github.com/mem0ai/mem0/tree/main/skills
 
 Each subdirectory is a Claude Code Skill (`SKILL.md` + supporting assets). Load only the one that matches the user's stack.
 
+### Claude Code Plugin
+
+Source: https://github.com/mem0ai/mem0/tree/main/integrations/claude-code-plugin
+
+The `integrations/claude-code-plugin/` directory is the Claude Code plugin (v0.3.0, installs as `mem0@mem0-plugins`). It captures evidence locally through lifecycle hooks, extracts memories in a detached background worker, and exposes a single local MCP tool, `search_memories`, plus six `/mem0:*` skills and the `mem0:sidekick` agent. Pure-stdlib Python, nothing to install.
+
 ### Editor Plugin (shared glue)
 
 Source: https://github.com/mem0ai/mem0/tree/main/integrations/mem0-plugin
 
-The `integrations/mem0-plugin/` directory provides MCP server connection, lifecycle hooks, and skill bundling for Claude Code, Cursor, Codex, OpenCode, and Antigravity. It exposes 9 MCP tools: `add_memory`, `search_memories`, `get_memories`, `get_memory`, `update_memory`, `delete_memory`, `delete_all_memories`, `delete_entities`, `list_entities`.
+The `integrations/mem0-plugin/` directory provides MCP server connection, lifecycle hooks, and skill bundling for Cursor, Codex, Kimi, Antigravity, and OpenCode. It exposes 9 MCP tools: `add_memory`, `search_memories`, `get_memories`, `get_memory`, `update_memory`, `delete_memory`, `delete_all_memories`, `delete_entities`, `list_entities`. Claude Code moved to `integrations/claude-code-plugin/` in v0.3.0; do not run both at the same time.
 
 Editor-specific setup docs (already listed above under `## Integrations > AI Coding Tools`):
 
