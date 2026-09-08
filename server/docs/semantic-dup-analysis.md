@@ -117,7 +117,6 @@
 | 清理后 | 4498 |
 | 减少比例 | 3.4% |
 | 备份表 | `memories_cleanup_archive` |
-| 清理脚本 | `server/scripts/cleanup_semantic_duplicates.py` |
 
 **高频聚类 Top 10**:
 
@@ -147,4 +146,3 @@ WHERE reason = 'semantic_duplicate_sim_gt_0.95';
 
 - 原始数据: `server/docs/semantic-dup-report.json`（366KB，含所有 >0.90 的记忆对详情）
 - 检测脚本: `server/scripts/detect_semantic_duplicates.py`
-- 清理脚本: `server/scripts/cleanup_semantic_duplicates.py`

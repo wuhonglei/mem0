@@ -19,11 +19,14 @@ from errors import (
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from governance.engine import run_on_add
+from governance.store import persist_report
 from models import RequestLog, User
 from pydantic import BaseModel, Field
 from rate_limit import limiter
 from routers import api_keys as api_keys_router
 from routers import auth as auth_router
+from routers import dream as dream_router
 from routers import entities as entities_router
 from routers import requests as requests_router
 from schemas import MessageResponse
@@ -39,6 +42,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import func, select
 
 from mem0.exceptions import ValidationError as Mem0ValidationError
+from mem0.memory.governance_filters import GOVERNANCE_PAYLOAD_KEYS
 
 load_dotenv()
 
@@ -257,6 +261,7 @@ app.include_router(auth_router.router)
 app.include_router(api_keys_router.router)
 app.include_router(entities_router.router)
 app.include_router(requests_router.router)
+app.include_router(dream_router.router)
 
 
 class Message(BaseModel):
@@ -308,6 +313,10 @@ class SearchRequest(BaseModel):
         None, description="Include score details for each search result.")
     show_expired: Optional[bool] = Field(
         None, description="Include expired memories.")
+    latest_only: Optional[bool] = Field(
+        None, description="Return only active memories (exclude superseded and merged).")
+    include_merged: Optional[bool] = Field(
+        None, description="Include memories marked as merged.")
 
 
 class GenerateInstructionsRequest(BaseModel):
@@ -483,6 +492,23 @@ def add_memory(memory_create: MemoryCreate, _auth=Depends(verify_auth)):
             messages=[m.model_dump() for m in memory_create.messages], **params)
         if response.get("results"):
             telemetry.log_dashboard_nudge_once(DASHBOARD_URL)
+        try:
+            report = run_on_add(
+                get_memory_instance(),
+                response,
+                user_id=memory_create.user_id,
+                agent_id=memory_create.agent_id,
+                run_id=memory_create.run_id,
+            )
+            if report:
+                try:
+                    with SessionLocal() as db:
+                        persist_report(db, report)
+                except Exception:
+                    logging.exception(
+                        "Failed to persist on-add Dream pass %s", report.get("pass_id"))
+        except Exception:
+            logging.exception("Dream on-add consolidate failed")
         return JSONResponse(content=response)
     except (ValueError, Mem0ValidationError) as e:
         raise _client_error(e)
@@ -492,12 +518,12 @@ def add_memory(memory_create: MemoryCreate, _auth=Depends(verify_auth)):
 
 ALL_MEMORIES_LIMIT = 1000
 _RESERVED_PAYLOAD_KEYS = {"data", "user_id", "agent_id",
-                          "run_id", "hash", "created_at", "updated_at", "expiration_date"}
+                          "run_id", "hash", "created_at", "updated_at", "expiration_date", *GOVERNANCE_PAYLOAD_KEYS}
 
 
 def _serialize_memory(row: Any) -> Dict[str, Any]:
     payload = getattr(row, "payload", None) or {}
-    return {
+    serialized = {
         "id": getattr(row, "id", None),
         "memory": payload.get("data"),
         "user_id": payload.get("user_id"),
@@ -509,6 +535,10 @@ def _serialize_memory(row: Any) -> Dict[str, Any]:
         "created_at": payload.get("created_at"),
         "updated_at": payload.get("updated_at"),
     }
+    for key in GOVERNANCE_PAYLOAD_KEYS:
+        if key in payload:
+            serialized[key] = payload[key]
+    return serialized
 
 
 def _list_all_memories(limit: int = ALL_MEMORIES_LIMIT) -> Dict[str, Any]:
@@ -526,6 +556,8 @@ def get_all_memories(
     agent_id: Optional[str] = None,
     top_k: Optional[int] = Query(None, ge=0, le=ALL_MEMORIES_LIMIT),
     show_expired: bool = Query(False),
+    latest_only: bool = Query(False),
+    include_merged: bool = Query(False),
     _auth=Depends(verify_auth),
 ):
     """Retrieve stored memories. Lists all memories when no identifier is provided (admin only)."""
@@ -544,6 +576,8 @@ def get_all_memories(
         if top_k is not None:
             params["top_k"] = top_k
         params["show_expired"] = show_expired
+        params["latest_only"] = latest_only
+        params["include_merged"] = include_merged
         return get_memory_instance().get_all(**params)
     except HTTPException:
         raise
@@ -586,6 +620,10 @@ def search_memories(search_req: SearchRequest, _auth=Depends(verify_auth)):
             params["explain"] = search_req.explain
         if search_req.show_expired is not None:
             params["show_expired"] = search_req.show_expired
+        if search_req.latest_only is not None:
+            params["latest_only"] = search_req.latest_only
+        if search_req.include_merged is not None:
+            params["include_merged"] = search_req.include_merged
         return get_memory_instance().search(query=search_req.query, filters=filters, **params)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -777,3 +777,27 @@ class TestWriteHandlerErrorMapping:
             "messages": [{"role": "user", "content": "hi"}], "user_id": "u1",
         })
         assert resp.status_code == 502
+
+
+class TestDreamReadFlags:
+    """latest_only / include_merged are forwarded to Memory.search and get_all."""
+
+    def test_search_latest_only_forwarded(self, client, mock_memory):
+        resp = client.post("/search", json={"query": "food", "user_id": "u1", "latest_only": True})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.search.call_args
+        assert kwargs["latest_only"] is True
+
+    def test_search_include_merged_forwarded(self, client, mock_memory):
+        resp = client.post("/search", json={"query": "food", "user_id": "u1", "include_merged": True})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.search.call_args
+        assert kwargs["include_merged"] is True
+
+    def test_get_all_flags_forwarded(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "latest_only": True, "include_merged": True})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["latest_only"] is True
+        assert kwargs["include_merged"] is True
+

@@ -1,0 +1,88 @@
+---
+title: Dream (self-hosted)
+description: "Merge duplicates, mark outdated facts, and synthesize pattern memories on the OSS REST server without deleting anything."
+icon: "moon"
+---
+
+The self-hosted REST server can keep a user's memory set coherent as it grows. After each `POST /memories` it can fold near-duplicates and flag superseded facts. A separate `POST /dream` pass reviews the full set and can write higher-order pattern memories.
+
+This is the OSS counterpart to [Platform Dream](/platform/features/dream). It lives on the **server**, not inside `Memory.add()`. Calling the Python SDK directly still uses the additive extraction pipeline only.
+
+<Info>
+  **You'll use this when...**
+  - You run the Mem0 REST server and want retrieval to prefer the current fact, not a pile of restatements.
+  - You need merge and supersede without deleting historical memories.
+  - You want optional pattern memories distilled from a user's active facts.
+</Info>
+
+## The three actions
+
+| Action | What it does | When it runs |
+|---|---|---|
+| **Merge** | Marks a near-duplicate `merged` and points it at a canonical memory | On add (cosine above threshold) and during `POST /dream` |
+| **Supersede** | Marks an older contradictory fact `superseded` and links it to the newer one | On add (LLM on mid-similarity candidates) and during `POST /dream` |
+| **Synthesis** | Adds a pattern memory with `synthesized_from` evidence ids | `POST /dream` with `synthesize=true` |
+
+Nothing is deleted. Merged and superseded rows stay in the vector store.
+
+## How reads change
+
+| Read mode | Active | Superseded | Merged |
+|---|:---:|:---:|:---:|
+| Default `search` / `get_all` | yes | yes | no |
+| `latest_only=true` | yes | no | no |
+| `include_merged=true` | yes | yes | yes |
+
+Memories written before Dream ran have no `governance_status` and are treated as **active**.
+
+Python SDK (same flags on `AsyncMemory`):
+
+```python
+m.search("Where does the user live?", filters={"user_id": "alice"}, latest_only=True)
+m.get_all(filters={"user_id": "alice"}, include_merged=True)
+```
+
+REST:
+
+```bash
+curl -X POST http://localhost:8888/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Where does the user live?", "filters": {"user_id": "alice"}, "latest_only": true}'
+```
+
+## On-add consolidate
+
+`POST /memories` still calls `Memory.add()` (hash dedup only). After a successful add, the server searches for similar memories in the same `user_id` / `agent_id` / `run_id` scope:
+
+- Score **greater than** `MEM0_DREAM_SIMILARITY_THRESHOLD` (default `0.95`): automatic merge, no LLM.
+- Score **0.70–threshold**: one LLM call decides merge, supersede, or none.
+- No candidates: the add response is unchanged.
+
+Failures in this step are logged and never fail the original add. Disable with `MEM0_DREAM_ON_ADD=false`.
+
+Governance tags are written with `Memory.update(metadata=...)` only (no `text`), so `data`, `hash`, and `text_lemmatized` stay intact.
+
+## Background pass
+
+```bash
+curl -X POST http://localhost:8888/dream \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "alice", "synthesize": true}'
+```
+
+The server does not ship a scheduler. Call this from cron or your app. `GET /dream` lists recent passes; `GET /dream/{pass_id}` returns the action log.
+
+Synthesis only considers memories that are all of:
+
+- scoped to `user_id` with no `agent_id` or `run_id`
+- `governance_status` active (missing counts as active)
+- **not** `memory_kind=pattern` (existing patterns stay searchable, but are not fed back in)
+
+At least 20 eligible memories are required unless `force=true`. The same evidence id set will not create a second pattern.
+
+## Environment
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MEM0_DREAM_ON_ADD` | `true` | Run merge/supersede after `POST /memories` |
+| `MEM0_DREAM_SIMILARITY_THRESHOLD` | `0.95` | Cosine-like score above which on-add merge is automatic |

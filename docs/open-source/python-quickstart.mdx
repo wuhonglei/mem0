@@ -55,6 +55,8 @@ results = m.search("What do you know about me?", filters={"user_id": "alex"})
 print(results)
 ```
 
+Pass `latest_only=True` on `search` / `get_all` to hide superseded and merged memories. The self-hosted REST server accepts the same flags. See [Dream (self-hosted)](/open-source/features/dream).
+
 **Output:**
 
 ```json

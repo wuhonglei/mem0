@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import time
 from datetime import datetime, timezone
@@ -372,6 +373,70 @@ def test_update_memory_uses_utc_timestamps(mocker):
     payload = memory.vector_store.update.call_args.kwargs["payload"]
     assert payload["created_at"] == "2026-03-17T17:00:00-07:00"
     assert payload["updated_at"] is not None
+
+
+def test_update_memory_metadata_only_preserves_text_fields(mocker):
+    """Governance tags via update(metadata=) must keep data/hash/text_lemmatized.
+
+    pgvector replaces the whole payload column, so a partial vector_store.update
+    would drop BM25 tokens. Memory.update merges into the existing payload.
+    """
+    memory = _build_memory_instance(mocker, Memory)
+    original_text = "User has a dog named Rex"
+    memory.vector_store.get.return_value = MagicMock(
+        payload={
+            "data": original_text,
+            "hash": "stale-hash",
+            "text_lemmatized": "user have a dog name rex",
+            "user_id": "u1",
+            "created_at": "2026-01-01T00:00:00+00:00",
+        }
+    )
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    mocker.patch("mem0.memory.main.capture_event")
+    memory.update("old-id", metadata={"governance_status": "merged", "merged_into": "new-id"})
+    payload = memory.vector_store.update.call_args.kwargs["payload"]
+    assert payload["data"] == original_text
+    assert payload["hash"] == hashlib.md5(original_text.encode()).hexdigest()
+    assert payload["text_lemmatized"]
+    assert payload["user_id"] == "u1"
+    assert payload["governance_status"] == "merged"
+    assert payload["merged_into"] == "new-id"
+
+
+def test_get_all_hides_merged_and_promotes_governance_fields(mocker):
+    memory = _build_memory_instance(mocker, Memory)
+    memory.vector_store.list.return_value = [
+        SimpleNamespace(
+            id="active",
+            payload={"data": "User lives in Berlin", "user_id": "u1", "governance_status": "active"},
+        ),
+        SimpleNamespace(
+            id="merged",
+            payload={"data": "User has a dog named Rex", "user_id": "u1", "governance_status": "merged", "merged_into": "active"},
+        ),
+        SimpleNamespace(
+            id="old",
+            payload={"data": "User lives in Lisbon", "user_id": "u1", "governance_status": "superseded", "superseded_by": "active"},
+        ),
+    ]
+    mocker.patch("mem0.memory.main.capture_event")
+    mocker.patch("mem0.memory.main.display_first_run_notice")
+    mocker.patch("mem0.memory.main.detect_scale_threshold_from_top_k", return_value=None)
+
+    default = memory.get_all(filters={"user_id": "u1"})["results"]
+    assert [row["id"] for row in default] == ["active", "old"]
+    berlin = next(row for row in default if row["id"] == "active")
+    assert berlin["governance_status"] == "active"
+    lisbon = next(row for row in default if row["id"] == "old")
+    assert lisbon["superseded_by"] == "active"
+    assert "governance_status" not in (lisbon.get("metadata") or {})
+
+    latest = memory.get_all(filters={"user_id": "u1"}, latest_only=True)["results"]
+    assert [row["id"] for row in latest] == ["active"]
+
+    everything = memory.get_all(filters={"user_id": "u1"}, include_merged=True)["results"]
+    assert [row["id"] for row in everything] == ["active", "merged", "old"]
 
 
 @pytest.mark.asyncio

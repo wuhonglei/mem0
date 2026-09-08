@@ -37,7 +37,12 @@ class VectorStoreBase(ABC):
 
     @abstractmethod
     def get(self, vector_id):
-        """Retrieve a vector by ID."""
+        """Retrieve a row by ID.
+
+        Implementations should include the stored embedding on the returned object
+        as ``vector`` when it is cheap to load. Search can then reuse it instead of
+        re-embedding the payload text.
+        """
         pass
 
     @abstractmethod

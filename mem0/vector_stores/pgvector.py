@@ -141,6 +141,34 @@ class OutputData(BaseModel):
     id: Optional[str]
     score: Optional[float]
     payload: Optional[dict]
+    vector: Optional[List[float]] = None
+
+
+def _coerce_vector(value: Any) -> Optional[List[float]]:
+    """Normalize a pgvector/psycopg value into a float list."""
+    if value is None:
+        return None
+    if isinstance(value, (list, tuple)):
+        try:
+            return [float(x) for x in value]
+        except (TypeError, ValueError):
+            return None
+    if hasattr(value, "tolist"):
+        try:
+            return [float(x) for x in value.tolist()]
+        except (TypeError, ValueError):
+            return None
+    if isinstance(value, str):
+        text = value.strip()
+        if text.startswith("[") and text.endswith("]"):
+            text = text[1:-1]
+        if not text:
+            return None
+        try:
+            return [float(part) for part in text.split(",")]
+        except ValueError:
+            return None
+    return None
 
 
 class PGVector(VectorStoreBase):
@@ -458,18 +486,23 @@ class PGVector(VectorStoreBase):
             vector_id (str): ID of the vector to retrieve.
 
         Returns:
-            OutputData: Retrieved vector.
+            OutputData: Retrieved row including the stored embedding when present.
         """
         self._ensure_collection()
         with self._get_cursor() as cur:
             cur.execute(
-                sql.SQL("SELECT id, payload FROM {} WHERE id = %s").format(self._col()),
+                sql.SQL("SELECT id, vector, payload FROM {} WHERE id = %s").format(self._col()),
                 (vector_id,),
             )
             result = cur.fetchone()
             if not result:
                 return None
-            return OutputData(id=str(result[0]), score=None, payload=result[1])
+            return OutputData(
+                id=str(result[0]),
+                score=None,
+                payload=result[2],
+                vector=_coerce_vector(result[1]),
+            )
 
     def list_cols(self) -> List[str]:
         """

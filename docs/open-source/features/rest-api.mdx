@@ -264,13 +264,16 @@ The OSS REST server exposes the following endpoints. None use the `/v1/` prefix.
 | `GET` | `/configure` | Get the current memory configuration |
 | `GET` | `/configure/providers` | List the LLM and embedder providers bundled in the container |
 | `POST` | `/memories` | Create memories |
-| `GET` | `/memories` | Get all memories (filter by `user_id`, `agent_id`, or `run_id`) |
+| `GET` | `/memories` | Get all memories (filter by `user_id`, `agent_id`, or `run_id`; `latest_only`, `include_merged`) |
 | `GET` | `/memories/{memory_id}` | Get a specific memory |
 | `PUT` | `/memories/{memory_id}` | Update a memory |
 | `DELETE` | `/memories/{memory_id}` | Delete a specific memory |
 | `DELETE` | `/memories` | Delete all memories for an identifier |
 | `GET` | `/memories/{memory_id}/history` | Get memory history |
-| `POST` | `/search` | Search memories |
+| `POST` | `/search` | Search memories (`latest_only`, `include_merged`) |
+| `POST` | `/dream` | Run a merge / supersede / synthesis pass for a user |
+| `GET` | `/dream` | List recent Dream passes |
+| `GET` | `/dream/{pass_id}` | Get one Dream pass and its actions |
 | `POST` | `/reset` | Reset all memories |
 
 ### Authentication

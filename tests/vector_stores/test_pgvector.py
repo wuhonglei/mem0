@@ -711,7 +711,7 @@ class TestPGVector(unittest.TestCase):
         mock_get_cursor.return_value.__exit__.return_value = None
         
         self.mock_cursor.fetchall.return_value = []  # No existing collections
-        self.mock_cursor.fetchone.return_value = (self.test_ids[0], {"key": "value1"})
+        self.mock_cursor.fetchone.return_value = (self.test_ids[0], [0.1, 0.2, 0.3], {"key": "value1"})
         
         pgvector = PGVector(
             dbname="test_db",
@@ -733,14 +733,15 @@ class TestPGVector(unittest.TestCase):
         mock_get_cursor.assert_called()
         
         # Verify get query was executed
-        get_calls = [call for call in self.mock_cursor.execute.call_args_list 
-                    if "SELECT id, payload" in str(call)]
+        get_calls = [call for call in self.mock_cursor.execute.call_args_list
+                    if "SELECT id, vector, payload" in str(call)]
         self.assertTrue(len(get_calls) > 0)
         
         # Verify result
         self.assertIsNotNone(result)
         self.assertEqual(result.id, self.test_ids[0])
         self.assertEqual(result.payload, {"key": "value1"})
+        self.assertEqual(result.vector, [0.1, 0.2, 0.3])
 
     @patch('mem0.vector_stores.pgvector.PSYCOPG_VERSION', 2)
     @patch('mem0.vector_stores.pgvector.ConnectionPool')
@@ -756,7 +757,7 @@ class TestPGVector(unittest.TestCase):
         mock_get_cursor.return_value.__exit__.return_value = None
         
         self.mock_cursor.fetchall.return_value = []  # No existing collections
-        self.mock_cursor.fetchone.return_value = (self.test_ids[0], {"key": "value1"})
+        self.mock_cursor.fetchone.return_value = (self.test_ids[0], [0.1, 0.2, 0.3], {"key": "value1"})
         
         pgvector = PGVector(
             dbname="test_db",
@@ -778,14 +779,15 @@ class TestPGVector(unittest.TestCase):
         mock_get_cursor.assert_called()
         
         # Verify get query was executed
-        get_calls = [call for call in self.mock_cursor.execute.call_args_list 
-                    if "SELECT id, payload" in str(call)]
+        get_calls = [call for call in self.mock_cursor.execute.call_args_list
+                    if "SELECT id, vector, payload" in str(call)]
         self.assertTrue(len(get_calls) > 0)
         
         # Verify result
         self.assertIsNotNone(result)
         self.assertEqual(result.id, self.test_ids[0])
         self.assertEqual(result.payload, {"key": "value1"})
+        self.assertEqual(result.vector, [0.1, 0.2, 0.3])
 
     @patch('mem0.vector_stores.pgvector.PSYCOPG_VERSION', 3)
     @patch('mem0.vector_stores.pgvector.ConnectionPool')
