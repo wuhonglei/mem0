@@ -82,6 +82,8 @@ def should_include_memory(
         return status == GOVERNANCE_STATUS_ACTIVE
     if status == GOVERNANCE_STATUS_MERGED:
         return include_merged
+    if status == GOVERNANCE_STATUS_ARCHIVED:
+        return include_merged
     return True
 
 
