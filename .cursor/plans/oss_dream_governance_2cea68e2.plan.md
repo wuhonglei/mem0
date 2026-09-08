@@ -3,10 +3,10 @@ name: OSS Dream Governance
 overview: 在 self-hosted server 上实现 non-destructive 的 Merge / Supersede / Synthesis 治理层；Python SDK 只补齐治理元数据与 `latest_only` / `include_merged` 读取过滤。add 后对高相似候选做合并与过时标记，后台 `POST /dream` 做全量治理与模式合成。
 todos:
   - id: sdk-filters
-    content: SDK get/search/get_all：latest_only、include_merged 后过滤 + 治理字段提升到顶层
+    content: SDK get/search/get_all：latest_only、include_merged 后过滤 + 治理字段（含 memory_kind）提升到顶层
     status: pending
   - id: governance-engine
-    content: server/governance：双重去重、LLM consolidate/synthesize、non-destructive 打标动作
+    content: server/governance：双重去重、LLM consolidate/synthesize、non-destructive 打标；synthesis 输入排除 memory_kind=pattern
     status: pending
   - id: on-add-hook
     content: POST /memories 成功后轻量 merge/supersede，失败不阻断 add
@@ -62,7 +62,7 @@ flowchart TD
 
 - 新增参数 `latest_only: bool = False`、`include_merged: bool = False`
 - 过取再后过滤（`fetch_limit = max(limit * 4, 60)`），缺字段视为 `active`
-- 把治理字段提升到结果顶层（与 `expiration_date` 相同）：`governance_status`、`merged_into`、`superseded_by`、`synthesized_from`
+- 把治理字段提升到结果顶层（与 `expiration_date` 相同）：`governance_status`、`merged_into`、`superseded_by`、`synthesized_from`、`memory_kind`
 
 抽一个小函数，避免 sync/async 各写一遍，例如 [`mem0/memory/governance_filters.py`](mem0/memory/governance_filters.py)：
 
@@ -110,7 +110,18 @@ def should_include_memory(payload, *, latest_only, include_merged) -> bool:
 {"governance_status": "active", "memory_kind": "pattern", "synthesized_from": [...]}
 ```
 
-通过已有 [`Memory.update(..., metadata=...)`](mem0/memory/main.py) 写入；合成记忆用 `add(infer=False, metadata=...)`，避免走提取流水线。不要用 `memory_type`（SDK 只允许 `procedural_memory`）。
+打标必须走 [`Memory.update(..., metadata=...)`](mem0/memory/main.py)（只传治理字段，不传 `text`）；合成记忆用 `add(infer=False, metadata=...)`。不要用 `memory_type`（SDK 只允许 `procedural_memory`）。
+
+**已验证：`update(metadata=)` 是 payload 顶层 merge，不是替换 `payload.metadata`。** Mem0 没有嵌套的 `payload.metadata`：`data` / `hash` / `text_lemmatized` / `user_id` 和用户自定义字段都在同一层 JSON。`_update_memory`（sync 与 async 相同）的顺序是：
+
+1. `new_metadata = deepcopy(existing_memory.payload)` — 整包拷贝，含 `text_lemmatized`
+2. `new_metadata.update(_strip_identity_keys(caller_metadata, ...))` — 只覆盖调用方给出的键；`user_id`/`agent_id`/`run_id`/`actor_id` 被丢掉
+3. 再强制写回 `data`、`hash`、`text_lemmatized = lemmatize_for_bm25(data)`、`created_at`（保留）、`updated_at`（刷新）
+4. `text=None` 时 `data` 取现有正文，因此 **metadata-only 打标会按原文重算 BM25 词元，不会清空**
+
+pgvector 的 [`update()`](mem0/vector_stores/pgvector.py) 是 `SET payload = %s` **整列替换**。因此治理层 **禁止** 直接 `vector_store.update(payload={governance_status: ...})`：那样会抹掉 `text_lemmatized` 和其余字段，检索退化。只把增量键交给 `Memory.update`，由它 merge 后再把完整 payload 写回。
+
+副作用：metadata-only 仍会重新 embed 同一段 `data`（`_update_memory` 无“跳过向量”分支）。正确性没问题，on-add 批量打标时注意延迟。
 
 复用 `get_memory_instance().llm` 与 `.embedding_model` / `.vector_store`，不另配一套模型。
 
@@ -137,7 +148,12 @@ def should_include_memory(payload, *, latest_only, include_merged) -> bool:
 - Gather：可选 `memory.db.get_last_messages(session_scope)`
 - Consolidate：按相似度聚类后分批给 LLM，输出 create/update/merge/supersede（**无 delete**）
 - Prune：只打标
-- Synthesis（`synthesize=true`）：仅 `user_id` 且无 `agent_id`/`run_id` 的 **active** 记忆；至少 20 条；幂等键为 `sorted(evidence_ids)` 的 hash，已有相同组合则跳过
+- Synthesis（`synthesize=true`）输入资格（必须同时满足）：
+  - 仅 `user_id` 且无 `agent_id`/`run_id`
+  - `governance_status` 为 **active**（缺省视为 active）
+  - **`memory_kind` 不是 `pattern`**（缺省视为普通记忆）。已有 pattern 仍是 active，默认 search 会返回它们，但不得再进入下一轮 synthesis，否则会 pattern 套 pattern
+  - 合格条数至少 20
+  - 幂等键为合格源记忆 `sorted(evidence_ids)` 的 hash（不含 pattern id）；已有相同组合则跳过
 
 不内置 APScheduler；chat-agent 用 cron/云函数调 `POST /dream`。
 
@@ -173,7 +189,7 @@ Alembic `007_create_dream_tables.py`（当前最新是 [`006_request_logs_brin.p
 测试：
 
 - [`tests/memory/test_governance_filters.py`](tests/memory/test_governance_filters.py)：缺省/active/merged/superseded × 两种 flag
-- [`tests/test_server_dream.py`](tests/test_server_dream.py)：mock LLM + Memory，覆盖 on-add merge、supersede 打标、synthesis 幂等、add 失败不阻断
+- [`tests/test_server_dream.py`](tests/test_server_dream.py)：mock LLM + Memory，覆盖 on-add merge、supersede 打标、synthesis 幂等、add 失败不阻断；打标后 `text_lemmatized` / `hash` / `data` 仍在（禁止走 `vector_store.update` 部分 payload）；已有 `memory_kind=pattern` 不得出现在下一轮 synthesis 的 LLM 输入 / evidence 列表
 - 扩展 [`tests/test_server_params.py`](tests/test_server_params.py)：`latest_only` / `include_merged` 转发
 
 删除 [`server/scripts/cleanup_semantic_duplicates.py`](server/scripts/cleanup_semantic_duplicates.py)（物理删除近似重复，与 non-destructive 打标冲突）。同步去掉 [`server/docs/semantic-dup-analysis.md`](server/docs/semantic-dup-analysis.md) 里对它的引用。检测脚本 [`server/scripts/detect_semantic_duplicates.py`](server/scripts/detect_semantic_duplicates.py) 保留，不接入主路径。
@@ -186,4 +202,4 @@ Alembic `007_create_dream_tables.py`（当前最新是 [`006_request_logs_brin.p
 
 - Merge：`"User has a dog named Rex"` + `"My dog Rex is a 3-year-old golden retriever"` → 短的标 `merged`，默认 search 只见规范条
 - Supersede：Lisbon → Berlin → 旧条 `superseded_by` 新条；默认仍返回旧条；`latest_only` 只见 Berlin
-- Synthesis：多条健身相关 active 记忆 → 一条 `memory_kind=pattern` 且带 `synthesized_from`
+- Synthesis：多条健身相关 **非 pattern** 的 active 记忆 → 一条 `memory_kind=pattern` 且带 `synthesized_from`；再跑一轮时该 pattern 不在输入中，不产生 pattern-of-patterns
