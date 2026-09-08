@@ -43,7 +43,8 @@ from mem0.exceptions import ValidationError as Mem0ValidationError
 load_dotenv()
 
 install_request_id_logging()
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - [%(request_id)s] %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - [%(request_id)s] %(message)s")
 
 MIN_KEY_LENGTH = 16
 SENSITIVE_CONFIG_KEYS = {
@@ -94,7 +95,8 @@ if not AUTH_DISABLED and not JWT_SECRET:
     )
 
 if AUTH_DISABLED:
-    logging.warning("AUTH_DISABLED is enabled. Protected endpoints are open for local development only.")
+    logging.warning(
+        "AUTH_DISABLED is enabled. Protected endpoints are open for local development only.")
 elif ADMIN_API_KEY and len(ADMIN_API_KEY) < MIN_KEY_LENGTH:
     logging.warning(
         "ADMIN_API_KEY is shorter than %d characters - consider using a longer key for production.",
@@ -110,18 +112,21 @@ POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
 POSTGRES_DB = os.environ.get("POSTGRES_DB", "postgres")
 POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "postgres")
-POSTGRES_COLLECTION_NAME = os.environ.get("POSTGRES_COLLECTION_NAME", "memories")
+POSTGRES_COLLECTION_NAME = os.environ.get(
+    "POSTGRES_COLLECTION_NAME", "memories")
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 HISTORY_DB_PATH = os.environ.get("HISTORY_DB_PATH", "/app/history/history.db")
 DEFAULT_LLM_MODEL = os.environ.get("MEM0_DEFAULT_LLM_MODEL", "gpt-5-mini")
-DEFAULT_EMBEDDER_MODEL = os.environ.get("MEM0_DEFAULT_EMBEDDER_MODEL", "text-embedding-3-small")
+DEFAULT_EMBEDDER_MODEL = os.environ.get(
+    "MEM0_DEFAULT_EMBEDDER_MODEL", "text-embedding-3-small")
 
 # Optional: custom LLM / embedder via OpenAI-compatible APIs (e.g. DashScope)
 MEM0_LLM_MODEL = os.environ.get("MEM0_LLM_MODEL", DEFAULT_LLM_MODEL)
 MEM0_LLM_BASE_URL = os.environ.get("MEM0_LLM_BASE_URL")
 MEM0_LLM_TEMPERATURE = float(os.environ.get("MEM0_LLM_TEMPERATURE", "0.2"))
-MEM0_EMBEDDER_MODEL = os.environ.get("MEM0_EMBEDDER_MODEL", DEFAULT_EMBEDDER_MODEL)
+MEM0_EMBEDDER_MODEL = os.environ.get(
+    "MEM0_EMBEDDER_MODEL", DEFAULT_EMBEDDER_MODEL)
 MEM0_EMBEDDER_BASE_URL = os.environ.get("MEM0_EMBEDDER_BASE_URL")
 MEM0_EMBEDDER_DIMENSION = os.environ.get("MEM0_EMBEDDER_DIMENSION")
 MEM0_LLM_TIMEOUT = float(os.environ.get("MEM0_LLM_TIMEOUT", "120"))
@@ -169,6 +174,14 @@ DEDUP_INSTRUCTIONS = """DEDUPLICATION RULES (highest priority — override gener
 4. EXACT SCENARIO SKIP: If the user is having a conversation ABOUT their answer preferences (e.g. "I like concise" → "no, be more detailed"), this is a SINGLE evolving preference — extract at most ONE final memory capturing the settled preference, not one per message.
 
 5. ANTI-ECHO: If both user and assistant express the same fact, extract only once from the user's version. Do not create a separate memory from the assistant's restatement.
+
+EPHEMERAL CONTENT REJECTION (highest priority — override ALL other extraction guidelines, including "When in doubt, extract"):
+
+R1. WEATHER/ENVIRONMENT SNAPSHOTS: Do NOT extract weather query results or environmental data snapshots — any memory containing specific temperature, humidity, wind speed, pressure, visibility, or air-quality readings, in any phrasing. This data is only valid at query time. Example: "用户于5月31日查询深圳天气，多云29℃，体感31℃，湿度72%..." → SKIP entirely.
+
+R2. SINGLE-QUERY RECORDS: Do NOT extract the act of asking itself — "User asked/queried/inquired about X on [date]" records have no long-term value. If the query content contains stable facts (preferences, identity, plans), extract ONLY the fact itself. Example: "用户于8月9日询问深圳去珠海的出行方式" → SKIP; but "用户经常往来深圳和珠海" (if evidenced) → extract.
+
+Exception: if the user EXPLICITLY asks to remember (e.g. "记住今天的天气"), extract as requested.
 """
 
 DEFAULT_CONFIG = {
@@ -245,49 +258,67 @@ app.include_router(requests_router.router)
 
 
 class Message(BaseModel):
-    role: str = Field(..., description="Role of the message (user or assistant).")
+    role: str = Field(...,
+                      description="Role of the message (user or assistant).")
     content: str = Field(..., description="Message content.")
 
 
 class MemoryCreate(BaseModel):
-    messages: List[Message] = Field(..., description="List of messages to store.")
+    messages: List[Message] = Field(...,
+                                    description="List of messages to store.")
     user_id: Optional[str] = None
     agent_id: Optional[str] = None
     run_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
-    expiration_date: Optional[str] = Field(None, description="Expiration date in YYYY-MM-DD format.")
-    infer: Optional[bool] = Field(None, description="Whether to extract facts from messages. Defaults to True.")
-    memory_type: Optional[str] = Field(None, description="Type of memory to store (e.g. 'core').")
-    prompt: Optional[str] = Field(None, description="Custom prompt to use for fact extraction.")
+    expiration_date: Optional[str] = Field(
+        None, description="Expiration date in YYYY-MM-DD format.")
+    infer: Optional[bool] = Field(
+        None, description="Whether to extract facts from messages. Defaults to True.")
+    memory_type: Optional[str] = Field(
+        None, description="Type of memory to store (e.g. 'core').")
+    prompt: Optional[str] = Field(
+        None, description="Custom prompt to use for fact extraction.")
 
 
 class MemoryUpdate(BaseModel):
-    text: Optional[str] = Field(None, description="New content to update the memory with.")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Metadata to update.")
-    expiration_date: Optional[str] = Field(None, description="Expiration date in YYYY-MM-DD format, or null to clear.")
+    text: Optional[str] = Field(
+        None, description="New content to update the memory with.")
+    metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Metadata to update.")
+    expiration_date: Optional[str] = Field(
+        None, description="Expiration date in YYYY-MM-DD format, or null to clear.")
 
 
 class SearchRequest(BaseModel):
     query: str = Field(..., description="Search query.")
-    user_id: Optional[str] = Field(None, description="Deprecated: pass inside `filters` instead.", deprecated=True)
-    run_id: Optional[str] = Field(None, description="Deprecated: pass inside `filters` instead.", deprecated=True)
-    agent_id: Optional[str] = Field(None, description="Deprecated: pass inside `filters` instead.", deprecated=True)
+    user_id: Optional[str] = Field(
+        None, description="Deprecated: pass inside `filters` instead.", deprecated=True)
+    run_id: Optional[str] = Field(
+        None, description="Deprecated: pass inside `filters` instead.", deprecated=True)
+    agent_id: Optional[str] = Field(
+        None, description="Deprecated: pass inside `filters` instead.", deprecated=True)
     filters: Optional[Dict[str, Any]] = None
-    top_k: Optional[int] = Field(None, description="Maximum number of results to return.")
-    threshold: Optional[float] = Field(None, description="Minimum similarity score for results.")
-    explain: Optional[bool] = Field(None, description="Include score details for each search result.")
-    show_expired: Optional[bool] = Field(None, description="Include expired memories.")
+    top_k: Optional[int] = Field(
+        None, description="Maximum number of results to return.")
+    threshold: Optional[float] = Field(
+        None, description="Minimum similarity score for results.")
+    explain: Optional[bool] = Field(
+        None, description="Include score details for each search result.")
+    show_expired: Optional[bool] = Field(
+        None, description="Include expired memories.")
 
 
 class GenerateInstructionsRequest(BaseModel):
-    use_case: str = Field(..., description="Description of what the user will use Mem0 for.")
+    use_case: str = Field(...,
+                          description="Description of what the user will use Mem0 for.")
 
 
 def _client_error(exc: Exception) -> HTTPException:
     """Map core validation / not-found errors to 4xx so clients can tell a bad
     request from an upstream outage. 'not found' is a 404, everything else a 400."""
     detail = str(exc)
-    status_code = 404 if isinstance(exc, ValueError) and "not found" in detail.lower() else 400
+    status_code = 404 if isinstance(
+        exc, ValueError) and "not found" in detail.lower() else 400
     return HTTPException(status_code=status_code, detail=detail)
 
 
@@ -440,11 +471,14 @@ def generate_instructions(req: GenerateInstructionsRequest, _auth=Depends(verify
 def add_memory(memory_create: MemoryCreate, _auth=Depends(verify_auth)):
     """Store new memories."""
     if not any([memory_create.user_id, memory_create.agent_id, memory_create.run_id]):
-        raise HTTPException(status_code=400, detail="At least one identifier (user_id, agent_id, run_id) is required.")
+        raise HTTPException(
+            status_code=400, detail="At least one identifier (user_id, agent_id, run_id) is required.")
 
-    params = {k: v for k, v in memory_create.model_dump().items() if v is not None and k != "messages"}
+    params = {k: v for k, v in memory_create.model_dump(
+    ).items() if v is not None and k != "messages"}
     try:
-        response = get_memory_instance().add(messages=[m.model_dump() for m in memory_create.messages], **params)
+        response = get_memory_instance().add(
+            messages=[m.model_dump() for m in memory_create.messages], **params)
         if response.get("results"):
             telemetry.log_dashboard_nudge_once(DASHBOARD_URL)
         return JSONResponse(content=response)
@@ -455,7 +489,8 @@ def add_memory(memory_create: MemoryCreate, _auth=Depends(verify_auth)):
 
 
 ALL_MEMORIES_LIMIT = 1000
-_RESERVED_PAYLOAD_KEYS = {"data", "user_id", "agent_id", "run_id", "hash", "created_at", "updated_at", "expiration_date"}
+_RESERVED_PAYLOAD_KEYS = {"data", "user_id", "agent_id",
+                          "run_id", "hash", "created_at", "updated_at", "expiration_date"}
 
 
 def _serialize_memory(row: Any) -> Dict[str, Any]:
@@ -476,7 +511,8 @@ def _serialize_memory(row: Any) -> Dict[str, Any]:
 
 def _list_all_memories(limit: int = ALL_MEMORIES_LIMIT) -> Dict[str, Any]:
     results = get_memory_instance().vector_store.list(top_k=limit)
-    rows = results[0] if results and isinstance(results, list) and isinstance(results[0], list) else results or []
+    rows = results[0] if results and isinstance(
+        results, list) and isinstance(results[0], list) else results or []
     return {"results": [_serialize_memory(row) for row in rows]}
 
 
@@ -495,7 +531,8 @@ def get_all_memories(
         if not any([user_id, run_id, agent_id]):
             auth_type = getattr(request.state, "auth_type", "none")
             if _auth is not None and _auth.role != "admin" and auth_type not in {"admin_api_key", "disabled"}:
-                raise HTTPException(status_code=403, detail="Admin role required to list all memories.")
+                raise HTTPException(
+                    status_code=403, detail="Admin role required to list all memories.")
             # Admin all-memory listing is intentionally raw; scoped get_all below applies expiry visibility.
             return _list_all_memories(limit=top_k if top_k is not None else ALL_MEMORIES_LIMIT)
         filters = {
@@ -560,7 +597,8 @@ def search_memories(search_req: SearchRequest, _auth=Depends(verify_auth)):
 def update_memory(memory_id: str, updated_memory: MemoryUpdate, _auth=Depends(verify_auth)):
     """Update an existing memory."""
     try:
-        fields_set = getattr(updated_memory, "model_fields_set", getattr(updated_memory, "__fields_set__", set()))
+        fields_set = getattr(updated_memory, "model_fields_set", getattr(
+            updated_memory, "__fields_set__", set()))
         params = {"memory_id": memory_id}
         if "text" in fields_set:
             params["data"] = updated_memory.text
@@ -605,7 +643,8 @@ def delete_all_memories(
 ):
     """Delete all memories for a given identifier. Requires admin role."""
     if not any([user_id, run_id, agent_id]):
-        raise HTTPException(status_code=400, detail="At least one identifier is required.")
+        raise HTTPException(
+            status_code=400, detail="At least one identifier is required.")
     try:
         params = {
             k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v
