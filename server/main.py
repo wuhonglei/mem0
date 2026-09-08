@@ -181,6 +181,8 @@ R1. WEATHER/ENVIRONMENT SNAPSHOTS: Do NOT extract weather query results or envir
 
 R2. SINGLE-QUERY RECORDS: Do NOT extract the act of asking itself — "User asked/queried/inquired about X on [date]" records have no long-term value. If the query content contains stable facts (preferences, identity, plans), extract ONLY the fact itself. Example: "用户于8月9日询问深圳去珠海的出行方式" → SKIP; but "用户经常往来深圳和珠海" (if evidenced) → extract.
 
+R3. NEWS/PRODUCT SNAPSHOTS: Do NOT extract news, product-launch details, or world-event information from assistant messages unless it connects to a durable user fact (preference, plan, purchase decision, ongoing comparison). The SUBJECT test: if the memory's subject is the world/a company/a product (e.g. "X公司发布Y产品，参数Z", "理想MEGA预计9月发布，配备…"), SKIP — the agent can search for current news at recall time. If the subject is the user (e.g. "用户正在对比小鹏MONA和小米SU7，预算20万", "用户在等小米Fold降价后再换机"), extract.
+
 Exception: if the user EXPLICITLY asks to remember (e.g. "记住今天的天气"), extract as requested.
 """
 
