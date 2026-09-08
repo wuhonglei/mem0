@@ -1,0 +1,203 @@
+{
+ "meta": {
+  "captured_at": "2026-09-08",
+  "commit": "619d1013",
+  "rules": "R1,R2,R3 active",
+  "total": 816
+ },
+ "by_month": {
+  "2026-05": 136,
+  "2026-06": 85,
+  "2026-07": 180,
+  "2026-08": 399,
+  "2026-09": 16
+ },
+ "by_attr": {
+  "assistant": 578,
+  "user": 206,
+  "": 32
+ },
+ "len_dist": {
+  "min": 7,
+  "max": 1075,
+  "avg": 123.6
+ },
+ "updated_never_created": 816,
+ "hash_dup_pairs": 0,
+ "semantic_dup_clusters": {
+  "33a0e343-0218-4a2d-8231-3d53772bfe0f": [
+   "206dfd3b-03f6-46b8-8c24-a2edad267e79",
+   "33a0e343-0218-4a2d-8231-3d53772bfe0f"
+  ],
+  "02197189-d2d8-4ec0-ad5e-71c265756765": [
+   "02197189-d2d8-4ec0-ad5e-71c265756765",
+   "62788ef5-70bf-45e3-81e9-18e918b0fa40"
+  ],
+  "a93d29e7-7f0f-4c28-bba0-7b54d22794bd": [
+   "2c3bcd1c-4ba8-4e91-bf62-7496bb6575ca",
+   "a93d29e7-7f0f-4c28-bba0-7b54d22794bd"
+  ],
+  "75fb9f7c-09c6-4ffa-9869-ebbb000e842c": [
+   "75fb9f7c-09c6-4ffa-9869-ebbb000e842c",
+   "fd24070f-81e8-4ded-a157-3789c15d9602"
+  ],
+  "fe5bf6a4-eef4-453f-aa49-e9464185016d": [
+   "9c3091b6-f4b2-4154-8edb-cb2fb7ff9a1c",
+   "b84fd338-02d6-45e9-92cb-8c2ce7d72418",
+   "bd84b94d-f4da-4e2d-b9dd-4daef1daecf6",
+   "fe5bf6a4-eef4-453f-aa49-e9464185016d"
+  ],
+  "53abfe3b-16d4-494a-b173-ee121e75dc36": [
+   "53abfe3b-16d4-494a-b173-ee121e75dc36",
+   "5f2b968a-5fea-4ec7-9bb3-bf73add126ee",
+   "84402b15-509e-475f-80c5-ca859ed4fddb"
+  ],
+  "63847ca1-bb32-426c-90cc-fcb92582b169": [
+   "4d93979c-3a1f-46fc-b4c5-21a57481426d",
+   "63847ca1-bb32-426c-90cc-fcb92582b169"
+  ],
+  "ba9608d3-8ea6-487f-a5d2-75c74db21225": [
+   "3bc18f75-5d9f-4f04-ad98-78562bcef1ca",
+   "ba9608d3-8ea6-487f-a5d2-75c74db21225"
+  ],
+  "6b8a4acc-4477-42f4-ab7b-731abe4fe4cf": [
+   "6b8a4acc-4477-42f4-ab7b-731abe4fe4cf",
+   "791848ea-1978-4282-af24-241632d1b6d0"
+  ],
+  "3d11b5c4-a833-4ecd-acd7-d55f4a23853a": [
+   "03b4fc52-af49-40f2-8ae6-0086b6a81679",
+   "3d11b5c4-a833-4ecd-acd7-d55f4a23853a"
+  ],
+  "0bb56281-3880-42e0-888c-0cd1a9ffdf8b": [
+   "0bb56281-3880-42e0-888c-0cd1a9ffdf8b",
+   "2135943c-fb19-495c-ad3a-be5be3c9e282"
+  ],
+  "09a065c4-af11-428e-a6a0-9725bf1d3486": [
+   "09a065c4-af11-428e-a6a0-9725bf1d3486",
+   "78a3d3b6-65b3-447c-93d7-8b046db1a24b",
+   "e5c4f9db-c948-4df3-9014-24bfc3584ddf"
+  ],
+  "eea47c27-4391-4dc3-a757-1aebca765c3e": [
+   "027c316e-55ee-4f40-8313-f761535a24a6",
+   "eea47c27-4391-4dc3-a757-1aebca765c3e"
+  ],
+  "704b797a-f33d-4f16-a492-763c6f281617": [
+   "704b797a-f33d-4f16-a492-763c6f281617",
+   "b11372fa-810a-43e4-bd81-f7ea2f0f7857",
+   "ca646481-fce1-41d3-b6f5-7e10dea35f2d"
+  ],
+  "b14b39ab-89a9-4068-8fe3-7eca32464e5f": [
+   "735f81c9-c962-4ee2-9cf8-4e44cc30fd46",
+   "b14b39ab-89a9-4068-8fe3-7eca32464e5f"
+  ],
+  "341d0dd2-4e4a-4f87-b43e-b6181a8429e3": [
+   "341d0dd2-4e4a-4f87-b43e-b6181a8429e3",
+   "d3eb12bf-ff6d-49a4-a73a-b74148e38281"
+  ]
+ },
+ "ephemeral_counts": {
+  "news_snapshot": 54,
+  "single_query_record": 6,
+  "weather_snapshot": 18,
+  "one_off_event": 4
+ },
+ "ephemeral_ids": {
+  "news_snapshot": [
+   "d9985b2a-4fa9-462e-8159-6b02cb09f9f1",
+   "9d0b07cf-bb1f-4931-898b-f92528af09f8",
+   "63d702c2-bd09-42b1-abc8-c545d0afe724",
+   "c0f9c2a9-1c00-486c-952f-b62c7c75ac10",
+   "3e9fcb8d-a88c-4127-a6c6-a3928c2eb340",
+   "688f8324-5a02-48ec-8263-34051a2e3215",
+   "c194c8d4-9faf-4115-98d0-42c96d9193fe",
+   "a708c688-af6e-484d-b9ca-14dec6ea9e9a",
+   "3e4aaa36-24c3-4721-ac22-6631b8878cf6",
+   "8a6adb94-987e-4bbd-9675-90780093da95",
+   "e87c809c-b448-4eb6-8a0f-420f01653635",
+   "4d3b8a4a-9dc3-43c7-b6c2-b90b933340af",
+   "ea020913-9db4-4b5e-b376-557490feb1c4",
+   "e4ded931-a165-4a6d-b7a8-3d1232e4d0cd",
+   "742e6b67-d172-4822-915d-2bcaa2e53590",
+   "2df5e4a4-1d38-48af-be0e-bf085aa71b85",
+   "fe229e92-f99a-4915-817c-ff0db0beb2b2",
+   "12158f75-2e47-4b2c-9ff8-a3be6978d713",
+   "019fee3b-641e-4be8-92d9-cb425633ccea",
+   "a01b6980-2430-4277-bba3-55ea5202ce7e",
+   "fa8b6727-27fd-4b47-9d0e-bc1a32daf5f6",
+   "82fc454d-7f4a-4c0e-9574-f23c30cb993c",
+   "8070848d-83f0-4b9a-bc7f-f4428fc5a940",
+   "164fff72-2ffa-48a7-b26d-de2f279ba8ec",
+   "ced947e0-ed55-46e1-a7cc-e79b88a46251",
+   "90a29297-703d-4348-96b8-23e3a5e1d944",
+   "09fe649c-ba49-4c90-8c33-813589c9740f",
+   "b3716a8c-bdbe-4474-a801-f96582fd1138",
+   "77605dd4-9b73-4a30-873e-cf854ae0af1b",
+   "09a065c4-af11-428e-a6a0-9725bf1d3486",
+   "e5c4f9db-c948-4df3-9014-24bfc3584ddf",
+   "dedca704-133e-4ca0-8921-6cb854011973",
+   "bb14f7c8-41e7-4aa0-a9fa-fd12eac5741f",
+   "5726fbb4-8e37-48d2-893d-e072c5891485",
+   "ac033487-5e7c-4f34-b5a3-9b498aeb590f",
+   "3dd9771d-7573-440a-8d78-edee51366bdf",
+   "758438d0-9038-4bc9-b48e-19c45dbba0ec",
+   "151bcb84-cf1d-404e-98fe-e987f6d194e7",
+   "c9fd4e3a-6306-4a73-8f0f-f4183860fc9f",
+   "5cfe3579-b234-4bd8-816e-d9a17b1086b3",
+   "5a9a24f0-35a1-45ab-979c-d554a0c49947",
+   "a6469c63-f6e4-470d-be34-7f1d5ed8ca60",
+   "105989ea-0209-472e-b148-68cc4a2e4769",
+   "017483d8-36af-42fb-99ed-e40e72159622",
+   "1ee42c0b-6b3f-488f-b933-7004ac06dc40",
+   "1d22054e-5996-4d8a-aec2-08f6d316bb06",
+   "77546e96-5ca2-4217-80fb-26f68c2b3f30",
+   "eaac47f1-b6ea-4dac-853b-9db98189d826",
+   "51b05c1a-8f92-4c2e-83fb-fbc6bd2b203d",
+   "79bfe92a-344f-4fac-94a6-42eeaa464472",
+   "60d78b4f-ff8c-4dd8-ac4c-d6ac0c547d0d",
+   "25d47e5c-1c1b-4dce-b078-d3f2b1cdd99d",
+   "6bb02549-0710-477a-b281-65455d867810",
+   "0cbce226-f712-4f2b-9e29-28d93079f88d"
+  ],
+  "single_query_record": [
+   "76a7c868-7a4f-447d-9e5b-7cc8ec8e6fc8",
+   "fe5bf6a4-eef4-453f-aa49-e9464185016d",
+   "b84fd338-02d6-45e9-92cb-8c2ce7d72418",
+   "9c3091b6-f4b2-4154-8edb-cb2fb7ff9a1c",
+   "bd84b94d-f4da-4e2d-b9dd-4daef1daecf6",
+   "4e298e08-5d32-4087-b611-4ce5271ffdcf"
+  ],
+  "weather_snapshot": [
+   "b2144243-42a5-4aee-bef4-21a3c5f3418e",
+   "a93d29e7-7f0f-4c28-bba0-7b54d22794bd",
+   "75fb9f7c-09c6-4ffa-9869-ebbb000e842c",
+   "2c3bcd1c-4ba8-4e91-bf62-7496bb6575ca",
+   "fd24070f-81e8-4ded-a157-3789c15d9602",
+   "395accbe-f252-403a-b045-688277df5e36",
+   "d6310ec3-0e2e-49d4-9639-c4281ab527d5",
+   "7447482b-d315-4631-a099-d75b2fe49a2e",
+   "9d6a3499-5fd6-4ec6-bb24-36abb9b29937",
+   "eea47c27-4391-4dc3-a757-1aebca765c3e",
+   "027c316e-55ee-4f40-8313-f761535a24a6",
+   "704b797a-f33d-4f16-a492-763c6f281617",
+   "b11372fa-810a-43e4-bd81-f7ea2f0f7857",
+   "ca646481-fce1-41d3-b6f5-7e10dea35f2d",
+   "51e3f123-50f8-4dfc-bea5-a9e7aa2ef5f6",
+   "d9a220cd-05d9-4ddc-891e-e25eeee25417",
+   "22a7ab05-41d2-4213-ae78-505385a08a49",
+   "e0777512-32a1-463a-941b-9418e3b2a89c"
+  ],
+  "one_off_event": [
+   "1023e926-d171-4bb6-8107-ffcff3781063",
+   "341d0dd2-4e4a-4f87-b43e-b6181a8429e3",
+   "d3eb12bf-ff6d-49a4-a73a-b74148e38281",
+   "ce9179fe-d73e-4bad-b8d4-1662dcac5c35"
+  ]
+ },
+ "recall_queries": 10,
+ "snapshot_files": [
+  "memories_full.tsv",
+  "memories_full.json",
+  "baseline_report.json",
+  "recall_baseline.json"
+ ]
+}
