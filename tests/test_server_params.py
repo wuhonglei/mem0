@@ -36,7 +36,7 @@ def _mock_memory():
     mock_instance.delete_all.return_value = {"message": "Memories deleted"}
     mock_instance.reset.return_value = None
 
-    with patch.dict(os.environ, {"OPENAI_API_KEY": "fake-key", "ADMIN_API_KEY": ""}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "fake-key", "ADMIN_API_KEY": "", "AUTH_DISABLED": "true", "JWT_SECRET": "test-secret"}):
         with patch("mem0.Memory.from_config", return_value=mock_instance):
             yield mock_instance
 
@@ -45,7 +45,7 @@ def _mock_memory():
 def client(_mock_memory):
     """Return a TestClient wired to the server app with mocked Memory."""
     import server.main as server_main
-    with patch.dict(os.environ, {"ADMIN_API_KEY": ""}):
+    with patch.dict(os.environ, {"ADMIN_API_KEY": "", "AUTH_DISABLED": "true", "JWT_SECRET": "test-secret"}):
         importlib.reload(server_main)
     return TestClient(server_main.app)
 
@@ -820,4 +820,75 @@ class TestDreamReadFlags:
         _, kwargs = mock_memory.get_all.call_args
         assert kwargs["latest_only"] is True
         assert kwargs["include_merged"] is True
+
+
+class TestGetMemoriesPayloadFilters:
+    """GET /memories forwards payload filters into get_all(filters=...)."""
+
+    def test_governance_status_merged_defaults_include_merged(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "governance_status": "merged"})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {"user_id": "u1", "governance_status": "merged"}
+        assert kwargs["include_merged"] is True
+
+    def test_memory_kind_pattern(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "memory_kind": "pattern"})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {"user_id": "u1", "memory_kind": "pattern"}
+
+    def test_memory_kind_ordinary_maps_to_ne_pattern(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "memory_kind": "ordinary"})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {"user_id": "u1", "memory_kind": {"ne": "pattern"}}
+
+    def test_created_from_and_to(self, client, mock_memory):
+        resp = client.get(
+            "/memories",
+            params={
+                "user_id": "u1",
+                "created_from": "2026-01-01T00:00:00Z",
+                "created_to": "2026-01-31T23:59:59Z",
+            },
+        )
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {
+            "user_id": "u1",
+            "created_at": {
+                "gte": "2026-01-01T00:00:00Z",
+                "lte": "2026-01-31T23:59:59Z",
+            },
+        }
+
+    def test_invalid_governance_status_400(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "governance_status": "deleted"})
+        assert resp.status_code == 400
+        mock_memory.get_all.assert_not_called()
+
+    def test_invalid_memory_kind_400(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "memory_kind": "fact"})
+        assert resp.status_code == 400
+        mock_memory.get_all.assert_not_called()
+
+    def test_created_from_after_created_to_400(self, client, mock_memory):
+        resp = client.get(
+            "/memories",
+            params={
+                "user_id": "u1",
+                "created_from": "2026-02-01T00:00:00Z",
+                "created_to": "2026-01-01T00:00:00Z",
+            },
+        )
+        assert resp.status_code == 400
+        mock_memory.get_all.assert_not_called()
+
+    def test_unfiltered_list_still_only_user_id(self, client, mock_memory):
+        resp = client.get("/memories?user_id=test_routing_user")
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {"user_id": "test_routing_user"}
+        assert kwargs["include_merged"] is False
 

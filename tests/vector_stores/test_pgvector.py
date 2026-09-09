@@ -2587,6 +2587,65 @@ class TestBuildFilterConditions(unittest.TestCase):
         conditions, params = _build_filter_conditions({"user_id": {"in": ["alice", "bob"]}})
         self.assertEqual(params, ["user_id", ["alice", "bob"]])
 
+    def test_created_at_iso_range_uses_timestamptz(self):
+        conditions, params = _build_filter_conditions({
+            "created_at": {
+                "gte": "2025-01-01T00:00:00Z",
+                "lte": "2025-12-31T23:59:59Z",
+            }
+        })
+        self.assertEqual(len(conditions), 2)
+        self.assertIn("::timestamptz", conditions[0])
+        self.assertIn("::timestamptz", conditions[1])
+        self.assertEqual(
+            params,
+            [
+                "created_at",
+                "2025-01-01T00:00:00Z",
+                "created_at",
+                "2025-12-31T23:59:59Z",
+            ],
+        )
+
+    def test_updated_at_iso_range_uses_timestamptz(self):
+        conditions, params = _build_filter_conditions({
+            "updated_at": {"gte": "2025-01-01"}
+        })
+        self.assertIn("::timestamptz", conditions[0])
+        self.assertEqual(params, ["updated_at", "2025-01-01"])
+
+    def test_numeric_gte_still_uses_numeric(self):
+        conditions, params = _build_filter_conditions({"price": {"gte": 100}})
+        self.assertIn("(payload->>%s)::numeric >= %s", conditions[0])
+        self.assertEqual(params, ["price", 100.0])
+
+    def test_created_at_mixed_datetime_and_numeric_raises(self):
+        with self.assertRaises(ValueError) as ctx:
+            _build_filter_conditions({"created_at": {"gte": "2025-01-01", "lte": 100}})
+        self.assertIn("created_at", str(ctx.exception))
+
+    def test_created_at_invalid_datetime_raises(self):
+        with self.assertRaises(ValueError) as ctx:
+            _build_filter_conditions({"created_at": {"gte": "2025-13-45"}})
+        self.assertIn("created_at", str(ctx.exception))
+
+    def test_memory_kind_ne_uses_coalesce(self):
+        conditions, params = _build_filter_conditions({"memory_kind": {"ne": "pattern"}})
+        self.assertEqual(len(conditions), 1)
+        self.assertIn("COALESCE", conditions[0])
+        self.assertIn("IS DISTINCT FROM", conditions[0])
+        self.assertNotIn("!=", conditions[0])
+        self.assertEqual(params, ["memory_kind", "pattern"])
+
+    def test_memory_kind_not_equality_uses_coalesce(self):
+        conditions, params = _build_filter_conditions({
+            "$not": [{"memory_kind": "pattern"}]
+        })
+        self.assertEqual(len(conditions), 1)
+        self.assertTrue(conditions[0].startswith("NOT"))
+        self.assertIn("COALESCE", conditions[0])
+        self.assertEqual(params, ["memory_kind", "pattern"])
+
 
 class TestVisibilitySqlConditions(unittest.TestCase):
     def test_defaults_add_no_filters(self):

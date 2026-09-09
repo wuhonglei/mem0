@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import time
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import telemetry
@@ -572,6 +573,86 @@ def _as_list_envelope(data: Any) -> Dict[str, Any]:
     return {"results": []}
 
 
+_GOVERNANCE_STATUS_VALUES = frozenset({"active", "merged", "superseded", "archived"})
+_MEMORY_KIND_VALUES = frozenset({"pattern", "ordinary"})
+
+
+def _parse_iso_datetime(value: str) -> datetime:
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    return datetime.fromisoformat(text)
+
+
+def _scoped_list_filters(
+    *,
+    user_id: Optional[str],
+    run_id: Optional[str],
+    agent_id: Optional[str],
+    governance_status: Optional[str],
+    memory_kind: Optional[str],
+    created_from: Optional[str],
+    created_to: Optional[str],
+) -> Dict[str, Any]:
+    if governance_status is not None and governance_status not in _GOVERNANCE_STATUS_VALUES:
+        raise HTTPException(
+            status_code=400,
+            detail="governance_status must be one of: active, merged, superseded, archived",
+        )
+    if memory_kind is not None and memory_kind not in _MEMORY_KIND_VALUES:
+        raise HTTPException(
+            status_code=400,
+            detail="memory_kind must be one of: pattern, ordinary",
+        )
+    parsed_from: Optional[datetime] = None
+    parsed_to: Optional[datetime] = None
+    if created_from is not None:
+        try:
+            parsed_from = _parse_iso_datetime(created_from)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail="created_from must be an ISO-8601 datetime"
+            ) from exc
+    if created_to is not None:
+        try:
+            parsed_to = _parse_iso_datetime(created_to)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail="created_to must be an ISO-8601 datetime"
+            ) from exc
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise HTTPException(
+            status_code=400, detail="created_from must be less than or equal to created_to"
+        )
+
+    filters: Dict[str, Any] = {
+        k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v
+    }
+    if governance_status:
+        filters["governance_status"] = governance_status
+    if memory_kind == "pattern":
+        filters["memory_kind"] = "pattern"
+    elif memory_kind == "ordinary":
+        filters["memory_kind"] = {"ne": "pattern"}
+    if created_from or created_to:
+        created: Dict[str, str] = {}
+        if created_from:
+            created["gte"] = created_from
+        if created_to:
+            created["lte"] = created_to
+        filters["created_at"] = created
+    return filters
+
+
+def _resolve_include_merged(
+    include_merged: Optional[bool],
+    governance_status: Optional[str],
+) -> bool:
+    if include_merged is not None:
+        return include_merged
+    return governance_status in {"merged", "archived"}
+
+
 def _resolve_page_paging(
     page: Optional[int],
     page_size: Optional[int],
@@ -601,13 +682,19 @@ def get_all_memories(
     page_size: Optional[int] = Query(None, ge=1, le=ALL_MEMORIES_LIMIT),
     show_expired: bool = Query(False),
     latest_only: bool = Query(False),
-    include_merged: bool = Query(False),
+    include_merged: Optional[bool] = Query(None),
+    governance_status: Optional[str] = Query(None),
+    memory_kind: Optional[str] = Query(None),
+    created_from: Optional[str] = Query(None),
+    created_to: Optional[str] = Query(None),
     _auth=Depends(verify_auth),
 ):
     """Retrieve stored memories. Lists all memories when no identifier is provided (admin only).
 
     Pagination: pass ``page`` / ``page_size`` (1-indexed) or the legacy ``top_k`` / ``offset``.
     Response is ``{"results": [...], "count": N}`` when the store can count matches.
+    Optional ``governance_status``, ``memory_kind``, ``created_from``, and ``created_to``
+    are merged into the same filters dict passed to ``get_all``.
     """
     try:
         if not any([user_id, run_id, agent_id]):
@@ -623,14 +710,20 @@ def get_all_memories(
                 limit=limit if limit is not None else ALL_MEMORIES_LIMIT,
                 offset=resolved_offset,
             )
-        filters = {
-            k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v
-        }
+        filters = _scoped_list_filters(
+            user_id=user_id,
+            run_id=run_id,
+            agent_id=agent_id,
+            governance_status=governance_status,
+            memory_kind=memory_kind,
+            created_from=created_from,
+            created_to=created_to,
+        )
         params: Dict[str, Any] = {
             "filters": filters,
             "show_expired": show_expired,
             "latest_only": latest_only,
-            "include_merged": include_merged,
+            "include_merged": _resolve_include_merged(include_merged, governance_status),
         }
         limit, resolved_offset = _resolve_page_paging(
             page, page_size, top_k, offset, 20

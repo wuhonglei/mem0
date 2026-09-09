@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Any, List, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -46,6 +47,64 @@ OPERATOR_SQL_MAP = {
     "icontains": ("payload->>%s ILIKE %s", False),
 }
 
+TIMESTAMP_FILTER_KEYS = frozenset({"created_at", "updated_at"})
+RANGE_OPERATORS = frozenset({"gt", "gte", "lt", "lte"})
+TIMESTAMP_RANGE_SQL = {
+    "gt": "(payload->>%s)::timestamptz > %s",
+    "gte": "(payload->>%s)::timestamptz >= %s",
+    "lt": "(payload->>%s)::timestamptz < %s",
+    "lte": "(payload->>%s)::timestamptz <= %s",
+}
+MEMORY_KIND_SQL = {
+    "eq": ("COALESCE(payload->>%s, '') = %s", False),
+    "ne": ("COALESCE(payload->>%s, '') IS DISTINCT FROM %s", False),
+    "in": ("COALESCE(payload->>%s, '') = ANY(%s)", False),
+    "nin": ("NOT (COALESCE(payload->>%s, '') = ANY(%s))", False),
+}
+
+_ISO_DATETIME_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}"
+    r"([T ]\d{2}:\d{2}(:\d{2})?"
+    r"(\.\d+)?"
+    r"(Z|[+-]\d{2}:?\d{2})?"
+    r")?$"
+)
+
+
+def _is_iso_datetime(value: Any) -> bool:
+    if not isinstance(value, str) or not _ISO_DATETIME_RE.match(value):
+        return False
+    text = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        datetime.fromisoformat(text)
+        return True
+    except ValueError:
+        return False
+
+
+def _is_numeric_range_value(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _operator_sql(key: str, op: str) -> tuple[str, bool]:
+    if key == "memory_kind" and op in MEMORY_KIND_SQL:
+        return MEMORY_KIND_SQL[op]
+    if op not in OPERATOR_SQL_MAP:
+        raise ValueError(f"Unsupported filter operator: {op}")
+    return OPERATOR_SQL_MAP[op]
+
+
+def _append_range_condition(conditions: list, params: list, key: str, op: str, op_value: Any) -> None:
+    if key in TIMESTAMP_FILTER_KEYS:
+        if not _is_iso_datetime(op_value):
+            raise ValueError(f"Invalid ISO datetime for field {key!r}: {op_value!r}")
+        conditions.append(TIMESTAMP_RANGE_SQL[op])
+        params.extend([key, op_value])
+        return
+    template, is_numeric = OPERATOR_SQL_MAP[op]
+    conditions.append(template)
+    params.extend([key, float(op_value) if is_numeric else str(op_value)])
+
 
 def _build_filter_conditions(filters):
     """Translate a processed filter dict into SQL WHERE fragments and parameter list."""
@@ -84,10 +143,21 @@ def _build_filter_conditions(filters):
             continue
 
         if isinstance(value, dict):
+            range_items = {op: op_value for op, op_value in value.items() if op in RANGE_OPERATORS}
+            if key in TIMESTAMP_FILTER_KEYS and range_items:
+                iso_flags = [_is_iso_datetime(op_value) for op_value in range_items.values()]
+                numeric_flags = [_is_numeric_range_value(op_value) for op_value in range_items.values()]
+                if any(iso_flags) and any(numeric_flags):
+                    raise ValueError(
+                        f"Mixed datetime and numeric range values for field {key!r}"
+                    )
             for op, op_value in value.items():
-                if op not in OPERATOR_SQL_MAP:
-                    raise ValueError(f"Unsupported filter operator: {op}")
-                template, is_numeric = OPERATOR_SQL_MAP[op]
+                if op in RANGE_OPERATORS:
+                    if op not in OPERATOR_SQL_MAP:
+                        raise ValueError(f"Unsupported filter operator: {op}")
+                    _append_range_condition(conditions, params, key, op, op_value)
+                    continue
+                template, is_numeric = _operator_sql(key, op)
                 if op in ("in", "nin"):
                     if not isinstance(op_value, list):
                         raise ValueError(
@@ -107,10 +177,16 @@ def _build_filter_conditions(filters):
                     else:
                         params.extend([key, str(op_value)])
         elif isinstance(value, list):
-            conditions.append("payload->>%s = ANY(%s)")
+            if key == "memory_kind":
+                conditions.append("COALESCE(payload->>%s, '') = ANY(%s)")
+            else:
+                conditions.append("payload->>%s = ANY(%s)")
             params.extend([key, [str(v) for v in value]])
         else:
-            conditions.append("payload->>%s = %s")
+            if key == "memory_kind":
+                conditions.append("COALESCE(payload->>%s, '') = %s")
+            else:
+                conditions.append("payload->>%s = %s")
             if isinstance(value, bool):
                 params.extend([key, json.dumps(value)])
             else:
