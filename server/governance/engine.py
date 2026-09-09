@@ -211,38 +211,48 @@ def is_synthesis_eligible(item: Dict[str, Any]) -> bool:
 
 
 def _list_memories_all(memory, filters: Dict[str, str], *, include_merged: bool = False) -> List[Dict[str, Any]]:
-    """Paginate through the full memory set for a filter scope.
+    """Walk the full memory set for a filter scope using keyset pagination.
 
-    ``get_all`` caps at ``DREAM_LIST_TOP_K`` per call, so walk the underlying
-    (unfiltered) ordering with raw-SQL-level offset until exhausted. The
-    governance/expiry read filters are applied per page by ``get_all``; pages
-    may therefore return fewer than the page size — exhaustion is detected by
-    the raw fetch count, not the filtered count.
+    ``get_all`` caps at ``DREAM_LIST_TOP_K`` per call. Instead of naive OFFSET
+    pagination (whose skips count the UNFILTERED row set, so heavy governance
+    tagging makes pages return fewer rows than requested and terminates the
+    walk early), we pass the oldest ``created_at`` of the previous page as a
+    cursor. Rows are fetched strictly older than the cursor, so:
+
+    - no row is fetched twice (except ties on the exact same timestamp, which
+      ``seen_ids`` dedup absorbs),
+    - the walk terminates only when a fetch returns nothing, independent of
+      how many rows the governance/expiry read filters remove per page.
     """
     collected: List[Dict[str, Any]] = []
     seen_ids: set = set()
-    offset = 0
+    cursor: Optional[str] = None
     while True:
+        kwargs: Dict[str, Any] = {"offset": 0}
+        if cursor is not None:
+            kwargs["before_created_at"] = cursor
         result = memory.get_all(
             filters=filters,
             top_k=DREAM_LIST_TOP_K,
             latest_only=False,
             include_merged=include_merged,
-            offset=offset,
+            **kwargs,
         )
         items = result.get("results") if isinstance(result, dict) else result
         if not items:
             break
+        page_new = 0
         for it in items:
             mid = str(it.get("id"))
             if mid not in seen_ids:
                 seen_ids.add(mid)
                 collected.append(it)
-        # Fetched a partial raw page (last page) or collected everything visible
-        if len(items) < DREAM_LIST_TOP_K:
+                page_new += 1
+        oldest = min((str(it.get("created_at") or "") for it in items), default=None)
+        if oldest is None or page_new == 0:
             break
-        offset += DREAM_LIST_TOP_K
-        if offset >= DREAM_LIST_HARD_CAP:
+        cursor = oldest
+        if len(collected) >= DREAM_LIST_HARD_CAP:
             break
     return collected
 

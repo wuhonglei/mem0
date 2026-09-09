@@ -1494,6 +1494,7 @@ class Memory(MemoryBase):
             latest_only=latest_only,
             include_merged=include_merged,
             offset=kwargs.get("offset", 0),
+            before_created_at=kwargs.get("before_created_at"),
         )
 
         if scale_threshold_notice:
@@ -1512,8 +1513,11 @@ class Memory(MemoryBase):
         latest_only=False,
         include_merged=False,
         offset=0,
+        before_created_at=None,
     ):
-        memories_result = self.vector_store.list(filters=filters, top_k=limit, offset=offset)
+        memories_result = self.vector_store.list(
+            filters=filters, top_k=limit, offset=offset, before_created_at=before_created_at
+        )
 
         # Handle different vector store return formats by inspecting first element
         if isinstance(memories_result, (tuple, list)) and len(memories_result) > 0:

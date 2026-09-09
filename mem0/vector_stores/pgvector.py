@@ -544,41 +544,52 @@ class PGVector(VectorStoreBase):
         return {"name": result[0], "count": result[1], "size": result[2]}
 
     def list(
-            self,
-            filters: Optional[dict] = None,
-            top_k: Optional[int] = 100,
-            offset: Optional[int] = 0,
-        ) -> List[OutputData]:
-            """
-            List all vectors in a collection.
+        self,
+        filters: Optional[dict] = None,
+        top_k: Optional[int] = 100,
+        offset: Optional[int] = 0,
+        before_created_at: Optional[str] = None,
+    ) -> List[OutputData]:
+        """
+        List vectors in a collection, newest first.
 
-            Args:
-                filters (Dict, optional): Filters to apply to the list.
-                top_k (int): Number of vectors to return. Defaults to 100.
-                offset (int): Number of vectors to skip (applied after ordering).
-                    Combined with ``top_k`` this enables keyset-free pagination over
-                    the ``created_at DESC`` ordering.
+        Args:
+            filters (Dict, optional): Filters to apply to the list.
+            top_k (int): Number of vectors to return. Defaults to 100.
+            offset (int): Number of vectors to skip (applied after ordering).
+                Naive pagination; skips count the UNFILTERED row set.
+            before_created_at (str, optional): ISO-8601 timestamp. Only rows with
+                ``created_at`` strictly older than this are returned. This is
+                keyset pagination: pass the oldest ``created_at`` of the previous
+                page to walk the collection without overlap or skip, regardless
+                of how many rows are filtered out downstream. Ties on equal
+                timestamps are handled by also skipping already-seen ids via
+                ``offset`` being small and non-overlapping ordering guarantees;
+                for strict correctness combine with dedup on the caller side.
 
-            Returns:
-                List[OutputData]: List of vectors.
-            """
-            self._ensure_collection()
-            filter_conditions, filter_params = _build_filter_conditions(filters)
-            filter_clause = sql.SQL("WHERE " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
+        Returns:
+            List[OutputData]: List of vectors.
+        """
+        self._ensure_collection()
+        filter_conditions, filter_params = _build_filter_conditions(filters)
+        if before_created_at is not None:
+            filter_conditions.append("(payload->>'created_at')::timestamptz < %s")
+            filter_params = list(filter_params) + [before_created_at]
+        filter_clause = sql.SQL("WHERE " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
 
-            with self._get_cursor() as cur:
-                cur.execute(
-                    sql.SQL("""
-                    SELECT id, payload
-                    FROM {}
-                    {}
-                    ORDER BY (payload->>'created_at')::timestamptz DESC
-                    LIMIT %s OFFSET %s
-                    """).format(self._col(), filter_clause),
-                    (*filter_params, top_k, offset or 0),
-                )
-                results = cur.fetchall()
-            return [[OutputData(id=str(r[0]), score=None, payload=r[1]) for r in results]]
+        with self._get_cursor() as cur:
+            cur.execute(
+                sql.SQL("""
+                SELECT id, payload
+                FROM {}
+                {}
+                ORDER BY (payload->>'created_at')::timestamptz DESC
+                LIMIT %s OFFSET %s
+                """).format(self._col(), filter_clause),
+                (*filter_params, top_k, offset or 0),
+            )
+            results = cur.fetchall()
+        return [[OutputData(id=str(r[0]), score=None, payload=r[1]) for r in results]]
 
     def __del__(self) -> None:
         """
