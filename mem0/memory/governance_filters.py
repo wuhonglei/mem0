@@ -34,6 +34,7 @@ PROMOTED_PAYLOAD_KEYS = (
     "role",
     "attributed_to",
     "expiration_date",
+    "category",
     *GOVERNANCE_PAYLOAD_KEYS,
 )
 

@@ -239,6 +239,7 @@ If the user is on a pre-current major (Python < 2, TS < 3, or a Platform call st
 - [OSS Multimodal Support (features)](https://docs.mem0.ai/open-source/features/multimodal-support) [OSS]: Use when handling images and PDFs self-hosted (feature guide).
 - [Custom Instructions (OSS)](https://docs.mem0.ai/open-source/features/custom-instructions) [OSS]: Use when tailoring extraction prompts in OSS.
 - [Dream (self-hosted)](https://docs.mem0.ai/open-source/features/dream) [OSS]: Use when the self-hosted REST server should merge duplicates, mark superseded facts, and synthesize pattern memories without deleting rows.
+- [Memory Decay (self-hosted)](https://docs.mem0.ai/open-source/features/memory-decay) [OSS]: Use when OSS search should boost recently accessed memories and dampen stale ones with a category-aware ranking bias, without deleting rows.
 - [REST API Server](https://docs.mem0.ai/open-source/features/rest-api) [OSS]: Use when exposing a self-hosted Mem0 as a FastAPI service.
 - [OpenAI Compatibility](https://docs.mem0.ai/open-source/features/openai_compatibility) [OSS]: Use when hitting an OpenAI-compatible endpoint with self-hosted.
 

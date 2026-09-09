@@ -152,6 +152,7 @@
                       "open-source/features/multimodal-support",
                       "open-source/features/custom-instructions",
                       "open-source/features/dream",
+                      "open-source/features/memory-decay",
                       "open-source/features/rest-api",
                       "open-source/features/openai_compatibility",
                       "platform/features/memory-expiration"

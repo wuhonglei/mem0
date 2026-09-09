@@ -154,6 +154,7 @@ def apply_synthesize(
         metadata={
             "governance_status": GOVERNANCE_STATUS_ACTIVE,
             "memory_kind": MEMORY_KIND_PATTERN,
+            "category": "interests",
             "synthesized_from": list(evidence_ids),
             "synthesis_evidence_hash": hashed,
             "governance_pass_id": pass_id,

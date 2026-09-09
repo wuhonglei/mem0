@@ -110,6 +110,26 @@ class TestSearchThreshold:
         assert "threshold" not in kwargs
 
 
+class TestSearchDecayOverride:
+    def test_decay_override_true_forwarded(self, client, mock_memory):
+        resp = client.post("/search", json={"query": "food", "user_id": "u1", "decay_override": True})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.search.call_args
+        assert kwargs["decay_override"] is True
+
+    def test_decay_override_false_forwarded(self, client, mock_memory):
+        resp = client.post("/search", json={"query": "food", "user_id": "u1", "decay_override": False})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.search.call_args
+        assert kwargs["decay_override"] is False
+
+    def test_decay_override_omitted(self, client, mock_memory):
+        resp = client.post("/search", json={"query": "food", "user_id": "u1"})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.search.call_args
+        assert "decay_override" not in kwargs
+
+
 # ===========================================================================
 # SearchRequest: explain parameter
 # ===========================================================================
@@ -368,6 +388,19 @@ class TestOpenAPISchema:
         schema = client.get("/openapi.json").json()
         search_props = schema["components"]["schemas"]["SearchRequest"]["properties"]
         assert "threshold" in search_props
+
+    def test_search_schema_includes_decay_override(self, client):
+        schema = client.get("/openapi.json").json()
+        search_props = schema["components"]["schemas"]["SearchRequest"]["properties"]
+        assert "decay_override" in search_props
+
+    def test_custom_instructions_require_decay_category(self, client):
+        import server.main as server_main
+
+        text = server_main.DEDUP_INSTRUCTIONS
+        for name in ("personal_core", "preferences", "interests", "state", "knowledge", "misc"):
+            assert name in text
+        assert "persistence of the fact first" in text.lower()
 
     def test_add_schema_includes_infer(self, client):
         schema = client.get("/openapi.json").json()

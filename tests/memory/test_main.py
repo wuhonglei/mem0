@@ -1,7 +1,7 @@
 import hashlib
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
 
@@ -1299,3 +1299,112 @@ class TestAddPipelineEntityEmbeddingCountGuard:
         assert any("padding/truncating" in r.message for r in caplog.records), (
             "expected count-mismatch warning was not emitted"
         )
+
+
+def test_infer_false_add_defaults_category_to_misc(mocker):
+    memory = _build_memory_instance(mocker, Memory)
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    memory._add_to_vector_store(
+        messages=[{"role": "user", "content": "plain fact"}],
+        metadata={"user_id": "u1"},
+        filters={},
+        infer=False,
+    )
+    payload = memory.vector_store.insert.call_args.kwargs["payloads"][0]
+    assert payload["category"] == "misc"
+
+
+def test_infer_false_add_keeps_explicit_category(mocker):
+    memory = _build_memory_instance(mocker, Memory)
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    memory._add_to_vector_store(
+        messages=[{"role": "user", "content": "pattern"}],
+        metadata={"user_id": "u1", "category": "interests"},
+        filters={},
+        infer=False,
+    )
+    payload = memory.vector_store.insert.call_args.kwargs["payloads"][0]
+    assert payload["category"] == "interests"
+
+
+def test_infer_true_add_writes_llm_category(mocker):
+    memory = _build_memory_instance(mocker, Memory)
+    memory.llm = mocker.MagicMock()
+    memory.llm.generate_response.return_value = (
+        '{"memory": [{"text": "User is allergic to peanuts", "attributed_to": "user", "category": "personal_core"}]}'
+    )
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    memory.embedding_model.embed_batch.return_value = [[0.1, 0.2, 0.3]]
+    memory.vector_store.search.return_value = []
+    mocker.patch("mem0.memory.main.lemmatize_for_bm25", return_value="user is allergic to peanuts")
+    mocker.patch("mem0.memory.main.extract_entities_batch", return_value=[[]])
+    memory._add_to_vector_store(
+        messages=[{"role": "user", "content": "I am allergic to peanuts"}],
+        metadata={"user_id": "u1"},
+        filters={"user_id": "u1"},
+        infer=True,
+    )
+    payload = memory.vector_store.insert.call_args.kwargs["payloads"][0]
+    assert payload["category"] == "personal_core"
+
+
+def test_infer_true_add_falls_back_by_attribution(mocker):
+    memory = _build_memory_instance(mocker, Memory)
+    memory.llm = mocker.MagicMock()
+    memory.llm.generate_response.return_value = (
+        '{"memory": [{"text": "Assistant recommended postgres", "attributed_to": "assistant"}]}'
+    )
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    memory.embedding_model.embed_batch.return_value = [[0.1, 0.2, 0.3]]
+    memory.vector_store.search.return_value = []
+    mocker.patch("mem0.memory.main.lemmatize_for_bm25", return_value="assistant recommended postgres")
+    mocker.patch("mem0.memory.main.extract_entities_batch", return_value=[[]])
+    memory._add_to_vector_store(
+        messages=[{"role": "assistant", "content": "Use postgres"}],
+        metadata={"user_id": "u1"},
+        filters={"user_id": "u1"},
+        infer=True,
+    )
+    payload = memory.vector_store.insert.call_args.kwargs["payloads"][0]
+    assert payload["category"] == "knowledge"
+
+
+def test_search_collect_matches_off_order(mocker, monkeypatch):
+    monkeypatch.setenv("MEM0_DECAY_MODE", "collect")
+    memory = _build_memory_instance(mocker, Memory)
+    now = datetime.now(timezone.utc)
+    stale = (now - timedelta(days=90)).isoformat()
+    fresh = now.isoformat()
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    memory.vector_store.keyword_search.return_value = None
+    mocker.patch("mem0.memory.main.lemmatize_for_bm25", return_value="q")
+    mocker.patch("mem0.memory.main.extract_entities", return_value=[])
+    memory.vector_store.search.return_value = [
+        MagicMock(id="stale", score=0.8, payload={"data": "stale", "category": "knowledge", "last_accessed_at": stale}),
+        MagicMock(id="fresh", score=0.6, payload={"data": "fresh", "category": "knowledge", "last_accessed_at": fresh}),
+    ]
+    off = memory._search_vector_store("q", {"user_id": "u"}, 2, decay_override=False)
+    collect = memory._search_vector_store("q", {"user_id": "u"}, 2)
+    assert [row["id"] for row in off] == [row["id"] for row in collect] == ["stale", "fresh"]
+
+
+def test_search_enforce_promotes_fresh_knowledge(mocker, monkeypatch):
+    monkeypatch.setenv("MEM0_DECAY_MODE", "enforce")
+    memory = _build_memory_instance(mocker, Memory)
+    now = datetime.now(timezone.utc)
+    stale = (now - timedelta(days=90)).isoformat()
+    fresh = now.isoformat()
+    memory.embedding_model.embed.return_value = [0.1, 0.2, 0.3]
+    memory.vector_store.keyword_search.return_value = None
+    mocker.patch("mem0.memory.main.lemmatize_for_bm25", return_value="q")
+    mocker.patch("mem0.memory.main.extract_entities", return_value=[])
+    memory.vector_store.search.return_value = [
+        MagicMock(id="stale", score=0.8, payload={"data": "stale", "category": "knowledge", "last_accessed_at": stale}),
+        MagicMock(id="fresh", score=0.6, payload={"data": "fresh", "category": "knowledge", "last_accessed_at": fresh}),
+    ]
+    off = memory._search_vector_store("q", {"user_id": "u"}, 2, decay_override=False)
+    on = memory._search_vector_store("q", {"user_id": "u"}, 2, decay_override=True)
+    assert [row["id"] for row in off] == ["stale", "fresh"]
+    assert [row["id"] for row in on][0] == "fresh"
+
+

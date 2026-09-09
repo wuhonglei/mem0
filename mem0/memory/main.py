@@ -26,6 +26,12 @@ from mem0.configs.prompts import (
 from mem0.exceptions import LLMError
 from mem0.exceptions import ValidationError as Mem0ValidationError
 from mem0.memory.base import MemoryBase
+from mem0.memory.decay import (
+    assign_direct_category,
+    assign_inferred_category,
+    finalize_search_scores,
+    search_rank_pool_size,
+)
 from mem0.memory.governance_filters import (
     CORE_AND_PROMOTED_KEYS,
     PROMOTED_PAYLOAD_KEYS,
@@ -1089,6 +1095,8 @@ class Memory(MemoryBase):
                 if actor_name:
                     per_msg_meta["actor_id"] = actor_name
 
+                assign_direct_category(per_msg_meta)
+
                 msg_content = message_dict["content"]
                 msg_embeddings = self.embedding_model.embed(msg_content, "add")
                 mem_id = self._create_memory(
@@ -1239,6 +1247,7 @@ class Memory(MemoryBase):
             mem_metadata["updated_at"] = mem_metadata["created_at"]
             if mem.get("attributed_to"):
                 mem_metadata["attributed_to"] = mem["attributed_to"]
+            assign_inferred_category(mem, mem_metadata)
 
             records.append((memory_id, text, embed_map[text], mem_metadata))
 
@@ -1665,6 +1674,7 @@ class Memory(MemoryBase):
         show_expired: bool = False,
         latest_only: bool = False,
         include_merged: bool = False,
+        decay_override: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -1701,6 +1711,8 @@ class Memory(MemoryBase):
             latest_only (bool, optional): Return only active memories, excluding superseded
                 and merged. Defaults to False.
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
+            decay_override (bool, optional): Force decay scaling on (True) or off (False),
+                ignoring MEM0_DECAY_MODE. None follows the env mode. A/B runs skip access writes.
 
         Returns:
             dict: A dictionary containing the search results under a "results" key.
@@ -1784,6 +1796,7 @@ class Memory(MemoryBase):
             show_expired=show_expired,
             latest_only=latest_only,
             include_merged=include_merged,
+            decay_override=decay_override,
         )
         search_elapsed_seconds = time.perf_counter() - search_start
 
@@ -1937,6 +1950,7 @@ class Memory(MemoryBase):
         show_expired=False,
         latest_only=False,
         include_merged=False,
+        decay_override=None,
     ):
         # Guard against None threshold (backward compat)
         if threshold is None:
@@ -1995,13 +2009,23 @@ class Memory(MemoryBase):
             })
 
         # Step 8: Score and rank
+        rank_k = search_rank_pool_size(limit, internal_limit, decay_override)
         scored_results = score_and_rank(
             semantic_results=candidates,
             bm25_scores=bm25_scores,
             entity_boosts=entity_boosts,
             threshold=threshold,
-            top_k=limit,
+            top_k=rank_k,
             explain=explain,
+        )
+
+        # Step 8.5 / 8.6: category-aware decay re-rank and access log
+        scored_results = finalize_search_scores(
+            scored_results,
+            limit=limit,
+            explain=explain,
+            decay_override=decay_override,
+            vector_store=self.vector_store,
         )
 
         # Step 9: Format results
@@ -2928,6 +2952,8 @@ class AsyncMemory(MemoryBase):
                 if actor_name:
                     per_msg_meta["actor_id"] = actor_name
 
+                assign_direct_category(per_msg_meta)
+
                 msg_content = message_dict["content"]
                 msg_embeddings = await asyncio.to_thread(self.embedding_model.embed, msg_content, "add")
                 mem_id = await self._create_memory(msg_content, {msg_content: msg_embeddings}, per_msg_meta)
@@ -3072,6 +3098,7 @@ class AsyncMemory(MemoryBase):
             mem_metadata["updated_at"] = mem_metadata["created_at"]
             if mem.get("attributed_to"):
                 mem_metadata["attributed_to"] = mem["attributed_to"]
+            assign_inferred_category(mem, mem_metadata)
 
             records.append((memory_id, text, embed_map[text], mem_metadata))
 
@@ -3478,6 +3505,7 @@ class AsyncMemory(MemoryBase):
         show_expired: bool = False,
         latest_only: bool = False,
         include_merged: bool = False,
+        decay_override: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -3514,6 +3542,8 @@ class AsyncMemory(MemoryBase):
             latest_only (bool, optional): Return only active memories, excluding superseded
                 and merged. Defaults to False.
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
+            decay_override (bool, optional): Force decay scaling on (True) or off (False),
+                ignoring MEM0_DECAY_MODE. None follows the env mode. A/B runs skip access writes.
 
         Returns:
             dict: A dictionary containing the search results under a "results" key.
@@ -3600,6 +3630,7 @@ class AsyncMemory(MemoryBase):
             show_expired=show_expired,
             latest_only=latest_only,
             include_merged=include_merged,
+            decay_override=decay_override,
         )
         search_elapsed_seconds = time.perf_counter() - search_start
 
@@ -3753,6 +3784,7 @@ class AsyncMemory(MemoryBase):
         show_expired=False,
         latest_only=False,
         include_merged=False,
+        decay_override=None,
     ):
         if threshold is None:
             threshold = 0.1
@@ -3809,13 +3841,23 @@ class AsyncMemory(MemoryBase):
             })
 
         # Step 8: Score and rank
+        rank_k = search_rank_pool_size(limit, internal_limit, decay_override)
         scored_results = score_and_rank(
             semantic_results=candidates,
             bm25_scores=bm25_scores,
             entity_boosts=entity_boosts,
             threshold=threshold,
-            top_k=limit,
+            top_k=rank_k,
             explain=explain,
+        )
+
+        # Step 8.5 / 8.6: category-aware decay re-rank and access log
+        scored_results = finalize_search_scores(
+            scored_results,
+            limit=limit,
+            explain=explain,
+            decay_override=decay_override,
+            vector_store=self.vector_store,
         )
 
         # Step 9: Format results

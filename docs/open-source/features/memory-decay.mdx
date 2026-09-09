@@ -1,0 +1,83 @@
+---
+title: Memory Decay (self-hosted)
+description: "Category-aware search-time ranking bias that boosts recently used memories and dampens stale ones, without deleting anything."
+icon: "hourglass"
+---
+
+Older memories crowd `top-k` and leak into answers. Self-hosted Memory Decay is a **soft ranking bias**, never a filter: it multiplies the combined search score after thresholding, then returns the public `score` clamped to `[0, 1]`. Nothing is deleted. `add` and `get_all` stay unchanged.
+
+This is the OSS counterpart to [Platform Memory Decay](/platform/features/memory-decay). Platform is a single curve toggled per project (`decay=true`). OSS is **category-aware**, driven by `MEM0_DECAY_MODE`, and still rejects the Platform `project.update(decay=...)` parameter.
+
+<Info>
+  **You'll use this when...**
+  - Search results are crowded with stale facts the user no longer cares about.
+  - You want recently retrieved memories to drift up automatically.
+  - You need a collect / observe window before the bias goes live.
+</Info>
+
+<Warning>
+  Default is **off**. Search ranking is bit-identical until you set `MEM0_DECAY_MODE=collect` (access logging only) or `enforce` (logging plus scaling). SDK image changes need `docker compose up --build`.
+</Warning>
+
+## Categories
+
+Each memory stores a payload `category`. Scaling only recognizes these six values; anything else (including a user-supplied `metadata.category` like `"movies"`) uses the `misc` curve.
+
+| category | floor | half-life | Typical facts |
+|---|---|---|---|
+| `personal_core` | 0.9 | 365d | Family, health, identity |
+| `preferences` | 0.85 | 180d | Tastes, professional profile |
+| `interests` | 0.8 | 90d | Hobbies, travel, synthesized patterns |
+| `state` | 0.3 | 14d | In-progress plans, waiting, comparisons |
+| `knowledge` | 0.3 | 30d | Technical notes and reference from the assistant |
+| `misc` | 0.5 | 60d | Everything else |
+
+`scaling = floor + (1.5 - floor) * exp(-age / half_life)` where `age` is `now - (last_accessed_at or updated_at)`.
+
+## Modes
+
+Set in the server environment:
+
+```bash
+MEM0_DECAY_MODE=off        # default
+MEM0_DECAY_MODE=collect    # write access_log, do not change ranking
+MEM0_DECAY_MODE=enforce    # access_log + multiply scores
+MEM0_DECAY_ACCESS_LOG_MAX=20
+```
+
+| mode | access log | multiply score |
+|---|---|---|
+| `off` | no | no |
+| `collect` | yes | no |
+| `enforce` | yes | yes |
+
+Per-call override for A/B (skips access writes so both arms stay clean):
+
+```python
+m.search("allergy meds", filters={"user_id": "alice"}, decay_override=False)
+m.search("allergy meds", filters={"user_id": "alice"}, decay_override=True)
+```
+
+REST:
+
+```bash
+curl -X POST http://localhost:8888/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "allergy meds", "filters": {"user_id": "alice"}, "decay_override": true}'
+```
+
+## How memories get a category
+
+- **Inferred `add`**: the server `custom_instructions` ask the extractor to emit `category`. Missing or invalid values fall back (`user` → `preferences`, `assistant` → `knowledge`, else `misc`).
+- **`add(infer=False)`**: keep a caller-supplied `category`; if absent, write `misc`. Dream synthesis writes `interests`.
+- **Existing rows**: `server/scripts/backfill_category.py --dry-run` then without `--dry-run`. Add `--llm` for leftovers.
+
+## Observation then enforce
+
+1. Deploy with `MEM0_DECAY_MODE=collect` (`docker compose up --build`).
+2. Run `server/scripts/decay_coverage.py` daily. Switch only after **at least 7 days**, **≥30%** of memories have `last_accessed_at`, and **personal_core touch > 0**. Cap 14 days; do not enforce if the gates fail.
+3. Capture a 16-query snapshot, then `server/scripts/decay_ab.py` with `decay_override` true/false. Life-line: personal_core ranks must not drop.
+
+## What does not change
+
+No deletes, no storage shrinkage, no `get_all` reorder, no Platform `decay` project flag. Access writes go to the vector-store payload only (`last_accessed_at`, `access_count`, `access_log`) and do not bump `updated_at` or write history.

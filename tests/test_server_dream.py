@@ -251,6 +251,7 @@ def test_synthesis_excludes_existing_patterns():
     add_kwargs = memory.add.call_args.kwargs
     assert add_kwargs["infer"] is False
     assert add_kwargs["metadata"]["memory_kind"] == "pattern"
+    assert add_kwargs["metadata"]["category"] == "interests"
     assert "pat-1" not in add_kwargs["metadata"]["synthesized_from"]
 
 

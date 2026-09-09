@@ -189,6 +189,18 @@ R2. SINGLE-QUERY RECORDS: Do NOT extract the act of asking itself — "User aske
 R3. NEWS/PRODUCT SNAPSHOTS: Do NOT extract news, product-launch details, or world-event information from assistant messages unless it connects to a durable user fact (preference, plan, purchase decision, ongoing comparison). The SUBJECT test: if the memory's subject is the world/a company/a product (e.g. "X公司发布Y产品，参数Z", "理想MEGA预计9月发布，配备…"), SKIP — the agent can search for current news at recall time. If the subject is the user (e.g. "用户正在对比小鹏MONA和小米SU7，预算20万", "用户在等小米Fold降价后再换机"), extract.
 
 Exception: if the user EXPLICITLY asks to remember (e.g. "记住今天的天气"), extract as requested.
+
+CATEGORY (required on every extracted memory — persistence of the fact first, topic second):
+
+For each memory, output a "category" field that is exactly one of:
+- personal_core: long-lived identity / family / health facts
+- preferences: tastes, professional profile, stable likes
+- interests: hobbies, travel, entertainment, reusable patterns
+- state: in-progress plans, waiting, active comparisons
+- knowledge: technical notes, schemes, reference info from the assistant
+- misc: everything else, including leftover time-sensitive scraps
+
+Decide how long the fact stays true before deciding its topic. Prefer misc over a high-stakes mislabel (never guess personal_core).
 """
 
 DEFAULT_CONFIG = {
@@ -318,6 +330,10 @@ class SearchRequest(BaseModel):
         None, description="Return only active memories (exclude superseded and merged).")
     include_merged: Optional[bool] = Field(
         None, description="Include memories marked as merged.")
+    decay_override: Optional[bool] = Field(
+        None,
+        description="Force decay ranking on (true) or off (false). Omit to follow MEM0_DECAY_MODE.",
+    )
 
 
 class GenerateInstructionsRequest(BaseModel):
@@ -547,7 +563,8 @@ def _list_all_memories(limit: int = ALL_MEMORIES_LIMIT, offset: int = 0) -> Dict
     results = vector_store.list(top_k=limit, offset=offset)
     rows = results[0] if results and isinstance(
         results, list) and isinstance(results[0], list) else results or []
-    payload: Dict[str, Any] = {"results": [_serialize_memory(row) for row in rows]}
+    payload: Dict[str, Any] = {"results": [
+        _serialize_memory(row) for row in rows]}
     count_fn = getattr(vector_store, "count", None)
     if callable(count_fn):
         try:
@@ -573,7 +590,8 @@ def _as_list_envelope(data: Any) -> Dict[str, Any]:
     return {"results": []}
 
 
-_GOVERNANCE_STATUS_VALUES = frozenset({"active", "merged", "superseded", "archived"})
+_GOVERNANCE_STATUS_VALUES = frozenset(
+    {"active", "merged", "superseded", "archived"})
 _MEMORY_KIND_VALUES = frozenset({"pattern", "ordinary"})
 
 
@@ -777,6 +795,8 @@ def search_memories(search_req: SearchRequest, _auth=Depends(verify_auth)):
             params["latest_only"] = search_req.latest_only
         if search_req.include_merged is not None:
             params["include_merged"] = search_req.include_merged
+        if search_req.decay_override is not None:
+            params["decay_override"] = search_req.decay_override
         return get_memory_instance().search(query=search_req.query, filters=filters, **params)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
