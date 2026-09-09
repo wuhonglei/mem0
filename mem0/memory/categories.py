@@ -30,6 +30,8 @@ MEMORY_CATEGORIES = frozenset(
 
 _STATE_RE = re.compile(r"正在|计划|等待|对比")
 _CORE_RE = re.compile(r"家庭|健康|过敏|职业|家人|父亲|母亲")
+_INTERESTS_RE = re.compile(r"推荐|行程|美食|景点|攻略|旅游|旅行|骑行路线|海鲜|早茶")
+_PROFILE_RE = re.compile(r"技术栈|个人优势|端到端|工程|经验|简历|面试|职业|项目.*能力")
 
 
 def infer_category(
@@ -100,6 +102,10 @@ def prelabel_category(payload: Optional[Dict[str, Any]]) -> Optional[str]:
         return CATEGORY_STATE
     if _CORE_RE.search(text):
         return CATEGORY_PERSONAL_CORE
+    if _INTERESTS_RE.search(text):
+        return CATEGORY_INTERESTS
+    if _PROFILE_RE.search(text):
+        return CATEGORY_PREFERENCES
     if payload.get("attributed_to") == "assistant":
         return CATEGORY_KNOWLEDGE
     return None
