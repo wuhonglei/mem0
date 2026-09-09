@@ -439,6 +439,62 @@ def test_get_all_hides_merged_and_promotes_governance_fields(mocker):
     assert [row["id"] for row in everything] == ["active", "merged", "old"]
 
 
+def test_get_all_returns_count_and_skips_overfetch_when_store_filters(mocker):
+    memory = _build_memory_instance(mocker, Memory)
+
+    class VisibilityStore:
+        def __init__(self):
+            self.list_kwargs = None
+
+        def list(
+            self,
+            filters=None,
+            top_k=None,
+            offset=0,
+            before_created_at=None,
+            show_expired=True,
+            latest_only=False,
+            include_merged=True,
+        ):
+            self.list_kwargs = {
+                "filters": filters,
+                "top_k": top_k,
+                "offset": offset,
+                "show_expired": show_expired,
+                "include_merged": include_merged,
+            }
+            return [
+                SimpleNamespace(
+                    id="active",
+                    payload={"data": "ok", "user_id": "u1", "governance_status": "active"},
+                )
+            ]
+
+        def count(
+            self,
+            filters=None,
+            before_created_at=None,
+            show_expired=True,
+            latest_only=False,
+            include_merged=True,
+        ):
+            return 41
+
+    store = VisibilityStore()
+    memory.vector_store = store
+    mocker.patch("mem0.memory.main.capture_event")
+    mocker.patch("mem0.memory.main.display_first_run_notice")
+    mocker.patch("mem0.memory.main.detect_scale_threshold_from_top_k", return_value=None)
+
+    payload = memory.get_all(filters={"user_id": "u1"}, top_k=20, offset=20)
+    assert payload["count"] == 41
+    assert [row["id"] for row in payload["results"]] == ["active"]
+    assert store.list_kwargs["top_k"] == 20
+    assert store.list_kwargs["offset"] == 20
+    assert store.list_kwargs["show_expired"] is False
+    assert store.list_kwargs["include_merged"] is False
+
+
 @pytest.mark.asyncio
 async def test_async_create_memory_uses_utc_timestamps(mocker):
     memory = _build_memory_instance(mocker, AsyncMemory)

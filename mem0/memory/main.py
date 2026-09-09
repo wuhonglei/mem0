@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import gc
 import hashlib
+import inspect
 import json
 import logging
 import os
@@ -450,6 +451,69 @@ def _normalize_expiration_date(value: Any) -> Optional[str]:
                 "expiration_date must be a valid date in YYYY-MM-DD format.") from exc
     raise ValueError(
         "expiration_date must be a date string in YYYY-MM-DD format.")
+
+
+def _signature_params(fn: Any) -> Dict[str, inspect.Parameter]:
+    try:
+        return dict(inspect.signature(fn).parameters)
+    except (TypeError, ValueError):
+        return {}
+
+
+def _bind_supported_kwargs(fn: Any, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    params = _signature_params(fn)
+    if not params:
+        return {key: kwargs[key] for key in ("filters", "top_k") if key in kwargs}
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return kwargs
+    return {key: value for key, value in kwargs.items() if key in params}
+
+
+def _store_pushes_visibility(vector_store: Any) -> bool:
+    list_fn = getattr(vector_store, "list", None)
+    if not callable(list_fn):
+        return False
+    params = _signature_params(list_fn)
+    return "show_expired" in params and "include_merged" in params
+
+
+def _count_visible_memories(
+    vector_store: Any,
+    filters: Dict[str, Any],
+    *,
+    show_expired: bool,
+    latest_only: bool,
+    include_merged: bool,
+    before_created_at: Optional[str] = None,
+) -> Optional[int]:
+    count_fn = getattr(vector_store, "count", None)
+    if not callable(count_fn):
+        return None
+    params = _signature_params(count_fn)
+    if "show_expired" not in params:
+        return None
+    kwargs = _bind_supported_kwargs(
+        count_fn,
+        {
+            "filters": filters,
+            "show_expired": show_expired,
+            "latest_only": latest_only,
+            "include_merged": include_merged,
+            "before_created_at": before_created_at,
+        },
+    )
+    try:
+        value = count_fn(**kwargs)
+    except TypeError:
+        return None
+    return value if isinstance(value, int) else None
+
+
+def _get_all_envelope(results: list, count: Optional[int]) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {"results": results}
+    if isinstance(count, int):
+        payload["count"] = count
+    return payload
 
 
 def _payload_is_expired(payload: Optional[Dict[str, Any]]) -> bool:
@@ -1439,8 +1503,9 @@ class Memory(MemoryBase):
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
 
         Returns:
-            dict: A dictionary containing a list of memories under the "results" key.
-                  Example for v1.1+: `{"results": [{"id": "...", "memory": "...", ...}]}`
+            dict: A dictionary containing a list of memories under the "results" key,
+                and ``count`` when the vector store can count the visible set.
+                  Example for v1.1+: `{"results": [{"id": "...", "memory": "...", ...}], "count": 12}`
 
         Raises:
             ValueError: If filters doesn't contain at least one of user_id, agent_id, run_id,
@@ -1475,10 +1540,15 @@ class Memory(MemoryBase):
             )
 
         limit = top_k
-        fetch_limit = fetch_limit_for_filters(
-            limit, latest_only=latest_only, include_merged=include_merged, show_expired=show_expired
-        )
+        if _store_pushes_visibility(self.vector_store):
+            fetch_limit = limit
+        else:
+            fetch_limit = fetch_limit_for_filters(
+                limit, latest_only=latest_only, include_merged=include_merged, show_expired=show_expired
+            )
         scale_threshold_notice = detect_scale_threshold_from_top_k(top_k)
+        offset = kwargs.get("offset", 0)
+        before_created_at = kwargs.get("before_created_at")
 
         keys, encoded_ids = process_telemetry_filters(effective_filters)
         capture_event(
@@ -1493,8 +1563,16 @@ class Memory(MemoryBase):
             limit,
             latest_only=latest_only,
             include_merged=include_merged,
-            offset=kwargs.get("offset", 0),
-            before_created_at=kwargs.get("before_created_at"),
+            offset=offset,
+            before_created_at=before_created_at,
+        )
+        count = _count_visible_memories(
+            self.vector_store,
+            effective_filters,
+            show_expired=show_expired,
+            latest_only=latest_only,
+            include_merged=include_merged,
+            before_created_at=before_created_at,
         )
 
         if scale_threshold_notice:
@@ -1502,7 +1580,7 @@ class Memory(MemoryBase):
                 self, "sync", "get_all", *scale_threshold_notice)
         else:
             display_first_run_notice(self, "sync", "get_all")
-        return {"results": all_memories_result}
+        return _get_all_envelope(all_memories_result, count)
 
     def _get_all_from_vector_store(
         self,
@@ -1515,9 +1593,19 @@ class Memory(MemoryBase):
         offset=0,
         before_created_at=None,
     ):
-        memories_result = self.vector_store.list(
-            filters=filters, top_k=limit, offset=offset, before_created_at=before_created_at
+        list_kwargs = _bind_supported_kwargs(
+            self.vector_store.list,
+            {
+                "filters": filters,
+                "top_k": limit,
+                "offset": offset,
+                "before_created_at": before_created_at,
+                "show_expired": show_expired,
+                "latest_only": latest_only,
+                "include_merged": include_merged,
+            },
         )
+        memories_result = self.vector_store.list(**list_kwargs)
 
         # Handle different vector store return formats by inspecting first element
         if isinstance(memories_result, (tuple, list)) and len(memories_result) > 0:
@@ -3228,8 +3316,9 @@ class AsyncMemory(MemoryBase):
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
 
         Returns:
-            dict: A dictionary containing a list of memories under the "results" key.
-                  Example for v1.1+: `{"results": [{"id": "...", "memory": "...", ...}]}`
+            dict: A dictionary containing a list of memories under the "results" key,
+                and ``count`` when the vector store can count the visible set.
+                  Example for v1.1+: `{"results": [{"id": "...", "memory": "...", ...}], "count": 12}`
 
         Raises:
             ValueError: If filters doesn't contain at least one of user_id, agent_id, run_id,
@@ -3264,10 +3353,15 @@ class AsyncMemory(MemoryBase):
             )
 
         limit = top_k
-        fetch_limit = fetch_limit_for_filters(
-            limit, latest_only=latest_only, include_merged=include_merged, show_expired=show_expired
-        )
+        if _store_pushes_visibility(self.vector_store):
+            fetch_limit = limit
+        else:
+            fetch_limit = fetch_limit_for_filters(
+                limit, latest_only=latest_only, include_merged=include_merged, show_expired=show_expired
+            )
         scale_threshold_notice = detect_scale_threshold_from_top_k(top_k)
+        offset = kwargs.get("offset", 0)
+        before_created_at = kwargs.get("before_created_at")
 
         keys, encoded_ids = process_telemetry_filters(effective_filters)
         capture_event(
@@ -3282,13 +3376,24 @@ class AsyncMemory(MemoryBase):
             limit,
             latest_only=latest_only,
             include_merged=include_merged,
+            offset=offset,
+            before_created_at=before_created_at,
+        )
+        count = await asyncio.to_thread(
+            _count_visible_memories,
+            self.vector_store,
+            effective_filters,
+            show_expired=show_expired,
+            latest_only=latest_only,
+            include_merged=include_merged,
+            before_created_at=before_created_at,
         )
 
         if scale_threshold_notice:
             await display_scale_threshold_notice_async(self, "async", "get_all", *scale_threshold_notice)
         else:
             await display_first_run_notice_async(self, "async", "get_all")
-        return {"results": all_memories_result}
+        return _get_all_envelope(all_memories_result, count)
 
     async def _get_all_from_vector_store(
         self,
@@ -3298,8 +3403,22 @@ class AsyncMemory(MemoryBase):
         output_limit=None,
         latest_only=False,
         include_merged=False,
+        offset=0,
+        before_created_at=None,
     ):
-        memories_result = await asyncio.to_thread(self.vector_store.list, filters=filters, top_k=limit)
+        list_kwargs = _bind_supported_kwargs(
+            self.vector_store.list,
+            {
+                "filters": filters,
+                "top_k": limit,
+                "offset": offset,
+                "before_created_at": before_created_at,
+                "show_expired": show_expired,
+                "latest_only": latest_only,
+                "include_merged": include_merged,
+            },
+        )
+        memories_result = await asyncio.to_thread(self.vector_store.list, **list_kwargs)
 
         # Handle different vector store return formats by inspecting first element
         if isinstance(memories_result, (tuple, list)) and len(memories_result) > 0:

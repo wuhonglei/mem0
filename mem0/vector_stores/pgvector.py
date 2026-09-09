@@ -119,6 +119,64 @@ def _build_filter_conditions(filters):
     return conditions, params
 
 
+def _visibility_sql_conditions(
+    show_expired: bool = True,
+    latest_only: bool = False,
+    include_merged: bool = True,
+) -> list[str]:
+    """SQL fragments matching Memory.get_all Python visibility filters.
+
+    Defaults match raw ``list()`` (no extra filtering) so delete_all / entity
+    scans keep seeing every row. ``get_all`` passes the stricter flags.
+    """
+    conditions: list[str] = []
+    if not show_expired:
+        conditions.append(
+            "("
+            "COALESCE(payload->>'expiration_date', '') = '' "
+            "OR (payload->>'expiration_date') !~ '^\\d{4}-\\d{2}-\\d{2}' "
+            "OR (payload->>'expiration_date')::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date"
+            ")"
+        )
+    if latest_only:
+        conditions.append(
+            "(COALESCE(payload->>'governance_status', '') = '' "
+            "OR payload->>'governance_status' = 'active')"
+        )
+    elif not include_merged:
+        conditions.append(
+            "(payload->>'governance_status' IS NULL "
+            "OR payload->>'governance_status' NOT IN ('merged', 'archived'))"
+        )
+    return conditions
+
+
+def _list_where_clause(
+    filters: Optional[dict] = None,
+    before_created_at: Optional[str] = None,
+    show_expired: bool = True,
+    latest_only: bool = False,
+    include_merged: bool = True,
+):
+    filter_conditions, filter_params = _build_filter_conditions(filters)
+    filter_conditions.extend(
+        _visibility_sql_conditions(
+            show_expired=show_expired,
+            latest_only=latest_only,
+            include_merged=include_merged,
+        )
+    )
+    if before_created_at is not None:
+        filter_conditions.append("(payload->>'created_at')::timestamptz < %s")
+        filter_params = list(filter_params) + [before_created_at]
+    filter_clause = (
+        sql.SQL("WHERE " + " AND ".join(filter_conditions))
+        if filter_conditions
+        else sql.SQL("")
+    )
+    return filter_clause, filter_params
+
+
 def _with_sslmode(connection_string: str, sslmode: str) -> str:
     """Add or replace sslmode in URI and keyword conninfo strings.
 
@@ -549,6 +607,9 @@ class PGVector(VectorStoreBase):
         top_k: Optional[int] = 100,
         offset: Optional[int] = 0,
         before_created_at: Optional[str] = None,
+        show_expired: bool = True,
+        latest_only: bool = False,
+        include_merged: bool = True,
     ) -> List[OutputData]:
         """
         List vectors in a collection, newest first.
@@ -557,25 +618,27 @@ class PGVector(VectorStoreBase):
             filters (Dict, optional): Filters to apply to the list.
             top_k (int): Number of vectors to return. Defaults to 100.
             offset (int): Number of vectors to skip (applied after ordering).
-                Naive pagination; skips count the UNFILTERED row set.
+                Skips count the filtered row set when visibility flags are used.
             before_created_at (str, optional): ISO-8601 timestamp. Only rows with
                 ``created_at`` strictly older than this are returned. This is
                 keyset pagination: pass the oldest ``created_at`` of the previous
-                page to walk the collection without overlap or skip, regardless
-                of how many rows are filtered out downstream. Ties on equal
-                timestamps are handled by also skipping already-seen ids via
-                ``offset`` being small and non-overlapping ordering guarantees;
-                for strict correctness combine with dedup on the caller side.
+                page to walk the collection without overlap or skip.
+            show_expired (bool): When False, hide expired memories. Defaults True
+                so raw list callers (delete_all, entity scan) see every row.
+            latest_only (bool): When True, only active memories.
+            include_merged (bool): When False, hide merged and archived memories.
 
         Returns:
             List[OutputData]: List of vectors.
         """
         self._ensure_collection()
-        filter_conditions, filter_params = _build_filter_conditions(filters)
-        if before_created_at is not None:
-            filter_conditions.append("(payload->>'created_at')::timestamptz < %s")
-            filter_params = list(filter_params) + [before_created_at]
-        filter_clause = sql.SQL("WHERE " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
+        filter_clause, filter_params = _list_where_clause(
+            filters=filters,
+            before_created_at=before_created_at,
+            show_expired=show_expired,
+            latest_only=latest_only,
+            include_merged=include_merged,
+        )
 
         with self._get_cursor() as cur:
             cur.execute(
@@ -590,6 +653,31 @@ class PGVector(VectorStoreBase):
             )
             results = cur.fetchall()
         return [[OutputData(id=str(r[0]), score=None, payload=r[1]) for r in results]]
+
+    def count(
+        self,
+        filters: Optional[dict] = None,
+        before_created_at: Optional[str] = None,
+        show_expired: bool = True,
+        latest_only: bool = False,
+        include_merged: bool = True,
+    ) -> int:
+        """Count rows matching the same filters as ``list()`` (no LIMIT/OFFSET)."""
+        self._ensure_collection()
+        filter_clause, filter_params = _list_where_clause(
+            filters=filters,
+            before_created_at=before_created_at,
+            show_expired=show_expired,
+            latest_only=latest_only,
+            include_merged=include_merged,
+        )
+        with self._get_cursor() as cur:
+            cur.execute(
+                sql.SQL("SELECT COUNT(*) FROM {} {}").format(self._col(), filter_clause),
+                tuple(filter_params),
+            )
+            row = cur.fetchone()
+        return int(row[0]) if row and row[0] is not None else 0
 
     def __del__(self) -> None:
         """

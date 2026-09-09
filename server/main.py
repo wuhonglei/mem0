@@ -541,11 +541,52 @@ def _serialize_memory(row: Any) -> Dict[str, Any]:
     return serialized
 
 
-def _list_all_memories(limit: int = ALL_MEMORIES_LIMIT) -> Dict[str, Any]:
-    results = get_memory_instance().vector_store.list(top_k=limit)
+def _list_all_memories(limit: int = ALL_MEMORIES_LIMIT, offset: int = 0) -> Dict[str, Any]:
+    vector_store = get_memory_instance().vector_store
+    results = vector_store.list(top_k=limit, offset=offset)
     rows = results[0] if results and isinstance(
         results, list) and isinstance(results[0], list) else results or []
-    return {"results": [_serialize_memory(row) for row in rows]}
+    payload: Dict[str, Any] = {"results": [_serialize_memory(row) for row in rows]}
+    count_fn = getattr(vector_store, "count", None)
+    if callable(count_fn):
+        try:
+            count = count_fn()
+        except TypeError:
+            count = None
+        if isinstance(count, int):
+            payload["count"] = count
+    return payload
+
+
+def _as_list_envelope(data: Any) -> Dict[str, Any]:
+    if isinstance(data, dict):
+        results = data.get("results")
+        if not isinstance(results, list):
+            results = []
+        envelope: Dict[str, Any] = {"results": results}
+        if isinstance(data.get("count"), int):
+            envelope["count"] = data["count"]
+        return envelope
+    if isinstance(data, list):
+        return {"results": data}
+    return {"results": []}
+
+
+def _resolve_page_paging(
+    page: Optional[int],
+    page_size: Optional[int],
+    top_k: Optional[int],
+    offset: int,
+    default_size: int,
+) -> tuple[Optional[int], int]:
+    """Return (limit, offset). limit is None when caller should use get_all default top_k."""
+    if page is not None or page_size is not None:
+        resolved_page = page or 1
+        resolved_size = page_size if page_size is not None else (
+            top_k if top_k is not None else default_size
+        )
+        return resolved_size, (resolved_page - 1) * resolved_size
+    return top_k, offset
 
 
 @app.get("/memories", summary="Get memories")
@@ -556,12 +597,18 @@ def get_all_memories(
     agent_id: Optional[str] = None,
     top_k: Optional[int] = Query(None, ge=0, le=ALL_MEMORIES_LIMIT),
     offset: int = Query(0, ge=0),
+    page: Optional[int] = Query(None, ge=1),
+    page_size: Optional[int] = Query(None, ge=1, le=ALL_MEMORIES_LIMIT),
     show_expired: bool = Query(False),
     latest_only: bool = Query(False),
     include_merged: bool = Query(False),
     _auth=Depends(verify_auth),
 ):
-    """Retrieve stored memories. Lists all memories when no identifier is provided (admin only)."""
+    """Retrieve stored memories. Lists all memories when no identifier is provided (admin only).
+
+    Pagination: pass ``page`` / ``page_size`` (1-indexed) or the legacy ``top_k`` / ``offset``.
+    Response is ``{"results": [...], "count": N}`` when the store can count matches.
+    """
     try:
         if not any([user_id, run_id, agent_id]):
             auth_type = getattr(request.state, "auth_type", "none")
@@ -569,18 +616,29 @@ def get_all_memories(
                 raise HTTPException(
                     status_code=403, detail="Admin role required to list all memories.")
             # Admin all-memory listing is intentionally raw; scoped get_all below applies expiry visibility.
-            return _list_all_memories(limit=top_k if top_k is not None else ALL_MEMORIES_LIMIT)
+            limit, resolved_offset = _resolve_page_paging(
+                page, page_size, top_k, offset, ALL_MEMORIES_LIMIT
+            )
+            return _list_all_memories(
+                limit=limit if limit is not None else ALL_MEMORIES_LIMIT,
+                offset=resolved_offset,
+            )
         filters = {
             k: v for k, v in {"user_id": user_id, "run_id": run_id, "agent_id": agent_id}.items() if v
         }
-        params = {"filters": filters}
-        if top_k is not None:
-            params["top_k"] = top_k
-        params["show_expired"] = show_expired
-        params["latest_only"] = latest_only
-        params["include_merged"] = include_merged
-        params["offset"] = offset
-        return get_memory_instance().get_all(**params)
+        params: Dict[str, Any] = {
+            "filters": filters,
+            "show_expired": show_expired,
+            "latest_only": latest_only,
+            "include_merged": include_merged,
+        }
+        limit, resolved_offset = _resolve_page_paging(
+            page, page_size, top_k, offset, 20
+        )
+        if limit is not None:
+            params["top_k"] = limit
+        params["offset"] = resolved_offset
+        return _as_list_envelope(get_memory_instance().get_all(**params))
     except HTTPException:
         raise
     except Exception:

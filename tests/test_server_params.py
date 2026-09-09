@@ -621,7 +621,8 @@ class TestGetMemories:
         
         # 2. Verify the response is structured correctly
         data = response.json()
-        assert isinstance(data, list)
+        assert isinstance(data, dict)
+        assert "results" in data
         
         # 3. Verify the core logic: the param was mapped to the filters dict!
         _, kwargs = mock_memory.get_all.call_args
@@ -648,6 +649,25 @@ class TestGetMemories:
 
     def test_get_memories_rejects_top_k_above_limit(self, client, mock_memory):
         response = client.get("/memories?user_id=test_routing_user&top_k=1001")
+
+        assert response.status_code == 422
+        mock_memory.get_all.assert_not_called()
+
+    def test_get_memories_page_maps_to_top_k_and_offset(self, client, mock_memory):
+        mock_memory.get_all.return_value = {"results": [], "count": 41}
+        response = client.get("/memories", params={"user_id": "u1", "page": 3, "page_size": 10})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["results"] == []
+        assert data["count"] == 41
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {"user_id": "u1"}
+        assert kwargs["top_k"] == 10
+        assert kwargs["offset"] == 20
+
+    def test_get_memories_rejects_page_size_above_limit(self, client, mock_memory):
+        response = client.get("/memories", params={"user_id": "u1", "page_size": 1001})
 
         assert response.status_code == 422
         mock_memory.get_all.assert_not_called()

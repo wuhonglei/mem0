@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from mem0.vector_stores.pgvector import (
     PGVector,
     _build_filter_conditions,
+    _visibility_sql_conditions,
     _with_sslmode,
 )
 
@@ -2332,6 +2333,64 @@ class TestPGVector(unittest.TestCase):
             # Verify pool.closeall() was called
             mock_pool.closeall.assert_called()
 
+    @patch('mem0.vector_stores.pgvector.PSYCOPG_VERSION', 3)
+    @patch('mem0.vector_stores.pgvector.ConnectionPool')
+    @patch.object(PGVector, '_get_cursor')
+    def test_list_passes_offset(self, mock_get_cursor, mock_connection_pool):
+        mock_get_cursor.return_value.__enter__.return_value = self.mock_cursor
+        mock_get_cursor.return_value.__exit__.return_value = None
+        self.mock_cursor.fetchall.return_value = []
+        pgvector = PGVector(
+            dbname="test_db",
+            collection_name="test_collection",
+            embedding_model_dims=3,
+            user="test_user",
+            password="test_pass",
+            host="localhost",
+            port=5432,
+            diskann=False,
+            hnsw=False,
+            minconn=1,
+            maxconn=4,
+        )
+        pgvector.list(filters={"user_id": "alice"}, top_k=20, offset=40)
+        list_calls = [
+            call for call in self.mock_cursor.execute.call_args_list
+            if "SELECT id, payload" in str(call)
+        ]
+        self.assertTrue(list_calls)
+        self.assertEqual(list_calls[-1][0][1][-2:], (20, 40))
+
+    @patch('mem0.vector_stores.pgvector.PSYCOPG_VERSION', 3)
+    @patch('mem0.vector_stores.pgvector.ConnectionPool')
+    @patch.object(PGVector, '_get_cursor')
+    def test_count_uses_same_filters(self, mock_get_cursor, mock_connection_pool):
+        mock_get_cursor.return_value.__enter__.return_value = self.mock_cursor
+        mock_get_cursor.return_value.__exit__.return_value = None
+        self.mock_cursor.fetchone.return_value = (7,)
+        pgvector = PGVector(
+            dbname="test_db",
+            collection_name="test_collection",
+            embedding_model_dims=3,
+            user="test_user",
+            password="test_pass",
+            host="localhost",
+            port=5432,
+            diskann=False,
+            hnsw=False,
+            minconn=1,
+            maxconn=4,
+        )
+        total = pgvector.count(filters={"user_id": "alice"}, include_merged=False)
+        self.assertEqual(total, 7)
+        count_calls = [
+            call for call in self.mock_cursor.execute.call_args_list
+            if "SELECT COUNT(*)" in str(call)
+        ]
+        self.assertTrue(count_calls)
+        sql_text = str(count_calls[-1][0][0])
+        self.assertIn("merged", sql_text)
+
     def tearDown(self):
         """Clean up after each test."""
         pass
@@ -2527,3 +2586,24 @@ class TestBuildFilterConditions(unittest.TestCase):
     def test_in_accepts_list_value(self):
         conditions, params = _build_filter_conditions({"user_id": {"in": ["alice", "bob"]}})
         self.assertEqual(params, ["user_id", ["alice", "bob"]])
+
+
+class TestVisibilitySqlConditions(unittest.TestCase):
+    def test_defaults_add_no_filters(self):
+        self.assertEqual(_visibility_sql_conditions(), [])
+
+    def test_hides_merged_when_include_merged_false(self):
+        conditions = _visibility_sql_conditions(include_merged=False)
+        self.assertEqual(len(conditions), 1)
+        self.assertIn("merged", conditions[0])
+        self.assertIn("archived", conditions[0])
+
+    def test_latest_only_is_active_only(self):
+        conditions = _visibility_sql_conditions(latest_only=True, include_merged=True)
+        self.assertEqual(len(conditions), 1)
+        self.assertIn("active", conditions[0])
+
+    def test_hides_expired(self):
+        conditions = _visibility_sql_conditions(show_expired=False)
+        self.assertEqual(len(conditions), 1)
+        self.assertIn("expiration_date", conditions[0])
