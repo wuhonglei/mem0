@@ -16,6 +16,7 @@ from mem0.memory.main import _build_session_scope
 from mem0.memory.utils import extract_json, remove_code_blocks
 
 from governance.actions import (
+    apply_absorb,
     apply_merge,
     apply_supersede,
     apply_synthesize,
@@ -29,14 +30,17 @@ from governance.config import (
     LLM_CANDIDATE_MIN_SCORE,
     SYNTHESIS_MIN_MEMORIES,
     dream_on_add_enabled,
+    absorb_enabled,
     similarity_threshold,
 )
 from governance.dedup import search_similar, split_auto_and_llm_candidates
 from governance.prompts import (
     CONSOLIDATE_SYSTEM_PROMPT,
     ON_ADD_SYSTEM_PROMPT,
+    SYNTHESIS_COVERAGE_SYSTEM_PROMPT,
     SYNTHESIS_SYSTEM_PROMPT,
     build_consolidate_user_prompt,
+    build_coverage_user_prompt,
     build_on_add_user_prompt,
     build_synthesis_user_prompt,
 )
@@ -514,6 +518,7 @@ def run_synthesis(memory, items: List[Dict[str, Any]], *, user_id: str, pass_id:
         SYNTHESIS_SYSTEM_PROMPT,
         build_synthesis_user_prompt(prompt_rows),
     )
+    by_real_id = {str(_memory_id(i)): i for i in eligible}
     applied = []
     for pattern in parsed.get("patterns") or []:
         evidence = _resolve_indexes(pattern.get("evidence_ids"), index_to_real)
@@ -525,19 +530,60 @@ def run_synthesis(memory, items: List[Dict[str, Any]], *, user_id: str, pass_id:
         hashed = evidence_hash(evidence)
         if hashed in existing_hashes:
             continue
-        applied.append(
-            apply_synthesize(
-                memory,
-                text=text,
-                evidence_ids=evidence,
-                user_id=user_id,
-                pass_id=pass_id,
-                reason=pattern.get("reason"),
-            )
+        action = apply_synthesize(
+            memory,
+            text=text,
+            evidence_ids=evidence,
+            user_id=user_id,
+            pass_id=pass_id,
+            reason=pattern.get("reason"),
         )
+        applied.append(action)
         existing_hashes.add(hashed)
         stats["synthesized"] += 1
         stats["created"] += 1
+
+        # Coverage pass: archive source memories fully absorbed by the new
+        # pattern. A separate conservative LLM judgement per pattern; any
+        # source with unique details is kept. Off by default.
+        if absorb_enabled():
+            new_id = action.get("id")
+            sources = [
+                {"id": str(idx), "memory": _memory_text(by_real_id[rid])}
+                for idx, rid in zip(pattern.get("evidence_ids") or [], evidence)
+                if rid in by_real_id
+            ]
+            if len(sources) >= 2:
+                try:
+                    judged = _llm_json(
+                        memory,
+                        SYNTHESIS_COVERAGE_SYSTEM_PROMPT,
+                        build_coverage_user_prompt(text, sources),
+                    )
+                except Exception as e:
+                    logger.warning("Synthesis coverage LLM call failed: %s", e)
+                    judged = {}
+                allowed = {str(idx) for idx in pattern.get("evidence_ids") or []}
+                for j in judged.get("judgements") or []:
+                    jid = str(j.get("id"))
+                    verdict = j.get("verdict")
+                    if jid in allowed and verdict == "absorb":
+                        real_id = None
+                        for idx, rid in zip(pattern.get("evidence_ids") or [], evidence):
+                            if str(idx) == jid:
+                                real_id = rid
+                                break
+                        if real_id and real_id in by_real_id:
+                            applied.append(
+                                apply_absorb(
+                                    memory,
+                                    source_id=real_id,
+                                    pattern_id=new_id,
+                                    pass_id=pass_id,
+                                    reason=j.get("reason"),
+                                )
+                            )
+                            stats["absorbed"] = stats.get("absorbed", 0) + 1
     return applied
 
 

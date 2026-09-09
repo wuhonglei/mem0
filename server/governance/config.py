@@ -30,3 +30,12 @@ def similarity_threshold() -> float:
         return float(raw)
     except ValueError:
         return DEFAULT_SIMILARITY_THRESHOLD
+
+
+def absorb_enabled() -> bool:
+    """Coverage-absorb: archive source memories fully covered by a pattern.
+
+    Off by default — enabling it makes synthesis lossy (sources are archived),
+    gated behind an explicit opt-in per deployment.
+    """
+    return _env_bool("MEM0_DREAM_ABSORB", False)

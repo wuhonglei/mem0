@@ -1,0 +1,1976 @@
+{
+ "L2_tool_inventory": [
+  {
+   "id": "08aa3c45-a2af-424c-ae66-063ecde08b3d",
+   "text": "助理说明其知识中涉及的系统组件包括 Hermes Agent 的模型别名（model_aliases）与自定义 Provider 配置（custom_providers）、Langfuse 的 Trace/Observation 观测模型、Anthropic Skill 与 MCP（Model Context Protocol）、OpenTelemetry 的 GenAI 语义约定，但这些属于用户记忆而非当前可用工具",
+   "attr": "assistant",
+   "created": "2026-06-02T15:09:21.424575+00:00"
+  },
+  {
+   "id": "6b1bcd83-cde9-42bb-9ef6-2fd06a92d56f",
+   "text": "助理当前系统中 available_skills 列表为空，未加载任何预置或自定义技能，内置技能目录 /mnt/skills/public/ 和用户自定义技能目录 /mnt/skills/custom/ 均未列出具体可用技能",
+   "attr": "assistant",
+   "created": "2026-05-31T15:33:53.314628+00:00"
+  },
+  {
+   "id": "aac6a2f5-da62-4db1-b5bb-b5ecc6263757",
+   "text": "助理推荐了自建 Agent Skill 框架的通用最佳实践结构，包含 agent_skill_package/ 根目录下的 src/skills/（含 web_search/ 和 code_execution/ 等具体技能子目录）、每个技能子目录内包含 skill.py（核心逻辑）、schema.json（参数与元数据定义）、prompt.txt（可选提示词模板），以及 skill_manager.py（统一注册与管理模块）",
+   "attr": "assistant",
+   "created": "2026-06-01T08:11:38.303718+00:00"
+  },
+  {
+   "id": "bf61302b-7576-4bce-aec7-c35254f75cb9",
+   "text": "助理向用户提供添加技能的两种方式：'find-skills'（查找可用技能）和'skill-creator'（创建或安装新技能），并强调其核心工具能力（文件处理、网页搜索、文档查询、命令执行）始终可用",
+   "attr": "assistant",
+   "created": "2026-05-31T15:31:50.411394+00:00"
+  },
+  {
+   "id": "8ffbc327-30e5-4414-aaf0-0a6d5f58b250",
+   "text": "助理当前共有6个可用工具，分为三类：天气相关工具（2个）、网页搜索与内容提取工具（3个）、代码执行工具（1个），不包含网页构建、图像生成或其他特殊技能",
+   "attr": "assistant",
+   "created": "2026-06-01T09:46:25.283393+00:00"
+  },
+  {
+   "id": "54211379-c971-45af-a7d8-b11baa9f50d3",
+   "text": "在自定义智能体技能开发中，推荐的项目结构为每个技能设立独立目录，包含skill.py（执行逻辑）、schema.json（输入输出参数及元数据）、prompt.txt（可选的大模型提示词模板），并通过skill_manager.py进行集中注册。",
+   "attr": "assistant",
+   "created": "2026-06-19T10:31:13.999190+00:00"
+  },
+  {
+   "id": "136be773-5a8e-445b-8661-86e3deb97c21",
+   "text": "助理当前可使用的工具分为四类：网络搜索与信息获取（web_search、browser_visit、browser_find、browser_scroll、browser_back）、代码与技术执行（code_interpreter）、技能系统（skill_manager_load_skill）以及记忆与上下文管理（可访问历史对话中用户提出的偏好和讨论的技术细节）",
+   "attr": "assistant",
+   "created": "2026-06-02T15:09:15.339346+00:00"
+  },
+  {
+   "id": "50dc5c57-6fec-4d6e-b8cf-03f01dbb8cc2",
+   "text": "助理说明其当前未安装任何专用技能，但支持通过skill-creator等工具创建或加载自定义技能，并指出内置技能位于/mnt/skills/public/（只读），用户自定义技能可存放在/mnt/skills/custom/（可读写）",
+   "attr": "assistant",
+   "created": "2026-05-31T15:32:21.886694+00:00"
+  },
+  {
+   "id": "b9c71a26-3606-4b0f-902d-2bc5c993b206",
+   "text": "用户询问当前有哪些技能列表，助手介绍了包括aihot（AI资讯查询）、chart-visualization（数据可视化图表生成）、consulting-analysis（咨询级分析报告生成）、data-analysis（数据分析）等可用技能",
+   "attr": "",
+   "created": "2026-08-22T07:51:49.179160+00:00"
+  },
+  {
+   "id": "93bbcffb-e42e-4628-b48c-3989c73ad16f",
+   "text": "助理当前共有7个可用工具，分为四类：时间查询工具（time_get_current_time）、天气相关工具（weather_search_city、weather_get_current_weather）、网络搜索与内容提取工具（tavily_web_search、tavily_web_pages_extract、tavily_web_site_crawl）以及代码执行工具（code_execute_code）",
+   "attr": "assistant",
+   "created": "2026-08-23T04:42:59.110384+00:00"
+  },
+  {
+   "id": "b94aebdb-bf0e-4af6-a676-14340906381f",
+   "text": "助理明确列出并说明了6个当前可用工具的具体名称与用途：weather_search_city（搜索城市信息并获取LocationID、经纬度、时区等）、weather_get_current_weather（获取指定位置实时天气）、tavily_web_search（基于Tavily的网页搜索，支持自定义搜索深度、时间范围和域名过滤）、tavily_web_pages_extract（从指定URL提取结构化网页内容）、tavily_web_site_crawl（结构化网页爬虫，支持控制爬取深度与广度）、code_execute_code（在Piston安全沙箱中执行Python/JavaScript/TypeScript代码）",
+   "attr": "assistant",
+   "created": "2026-06-02T15:08:27.687345+00:00"
+  },
+  {
+   "id": "34f107a6-6ce0-40ad-8423-ba6927c408ae",
+   "text": "主要风险包括：理解负债（AI生成的代码速度超过人类理解能力，导致知识鸿沟扩大）、安全漏洞（截至2026年中，AI编码工具中已确认70多个CVE；在审计的17,022个技能中发现520个凭据泄露，主要来自调试日志）、因无约束迭代导致的失控Token成本，以及与Kubernetes等确定性系统相比，非确定性行为带来的可靠性挑战。",
+   "attr": "assistant",
+   "created": "2026-07-21T02:32:26.605063+00:00"
+  },
+  {
+   "id": "0c6b28b3-1ed4-46c2-b455-471702eae3db",
+   "text": "助手的13项可用技能分为四大功能组：（1）数据与分析（data-analysis、chart-visualization、consulting-analysis、deep-research），（2）内容创作（newsletter-generation、ppt-generation、image-generation、aihot），（3）开发与部署（webapp-building、vercel-deploy），（4）系统与工具（find-skills、skill-creator、surprise-me）。",
+   "attr": "assistant",
+   "created": "2026-06-24T03:24:33.173296+00:00"
+  }
+ ],
+ "L1_news": [
+  {
+   "id": "f8b7f609-6699-4462-96f0-9e69ce3e50a0",
+   "text": "MemoryBear（记忆熊／红熊 AI）的官方网站是 https://www.memorybear.ai，由上海算模算样科技有限公司（成立于2024年4月）开发，该公司是上海模速空间创新孵化社区的代表性企业",
+   "attr": "assistant",
+   "created": "2026-08-05T08:39:10.635856+00:00"
+  },
+  {
+   "id": "b5d7c092-4a9d-4ece-b794-6e89cc58c121",
+   "text": "MemoryBear（红熊 AI）的核心产品矩阵包括：MemoryBear记忆科学系统（融合ACT-R双记忆架构、艾宾浩斯遗忘曲线、智能语义剪枝、3D自我反思引擎，已开源）、OpenBear（为记忆而生的通用大模型，MoE架构，百万亿级参数）和CodeBear（记忆型编程大模型平台）",
+   "attr": "assistant",
+   "created": "2026-08-05T08:39:10.764429+00:00"
+  },
+  {
+   "id": "964df1cb-b16f-4de4-bb73-4c11b3ebfe05",
+   "text": "GitHub上存在一个同名开源项目ag4852/memory-bear（MCP server个人知识管理工具），但该工具与红熊AI官方MemoryBear记忆科学系统并非同一产品；红熊AI的开源版本以官网及官方GitHub仓库为准",
+   "attr": "assistant",
+   "created": "2026-08-05T08:39:10.859754+00:00"
+  },
+  {
+   "id": "25adbea9-eac7-4103-b014-830727285171",
+   "text": "MemoryBear（红熊 AI）的底层架构是完全开源的，其官方 GitHub 仓库 https://github.com/SuanmoSuanyangTechnology/MemoryBear 采用 Apache License 2.0 协议，包含完整的 Python/FastAPI 后端源码（含记忆萃取引擎、遗忘引擎、自我反思引擎、混合检索服务、图谱存储层）、React/TypeScript/Vite 前端源码、Alembic 数据库迁移脚本及 Docker Compose 部署方案，支持本地全栈自建，依赖 PostgreSQL 13+、Neo4j 4.4+ 和 Redis 6.0+ 等开源基础设施",
+   "attr": "assistant",
+   "created": "2026-08-05T08:41:19.443659+00:00"
+  },
+  {
+   "id": "a41a7174-daf3-486d-96d8-eba7da4b9926",
+   "text": "MemoryBear（红熊 AI）开源仓库不包含 OpenBear 通用大模型或 CodeBear 编程模型的权重与训练代码；记忆系统需用户自行对接外部 LLM，且调用时需在 .env 文件中配置对应 API Key",
+   "attr": "assistant",
+   "created": "2026-08-05T08:41:19.481771+00:00"
+  },
+  {
+   "id": "8ea0f047-daab-4b54-b985-41e24ba58f69",
+   "text": "MemoryBear（红熊 AI）开源版本为自部署架构，不含商业 SaaS 版本的租户管理、计费系统、多租户监控等运营侧代码",
+   "attr": "assistant",
+   "created": "2026-08-05T08:41:19.511705+00:00"
+  },
+  {
+   "id": "1f37d36f-7bf1-46f8-8584-3d1a636a3a21",
+   "text": "PaddleOCR支持多种后端部署，包括原生PaddleOCR、Transformers和ONNX Runtime，其PP-OCRv6模型已在Hugging Face上以模型ID“PaddlePaddle/pp-ocrv6”公开发布。",
+   "attr": "assistant",
+   "created": "2026-07-06T04:27:15.402976+00:00"
+  },
+  {
+   "id": "02f31f52-fd1a-4a57-9569-16585d98fda6",
+   "text": "助理系统阐释了 OTel 与 Langfuse 的互补关系：OTel 是 CNCF 顶级的通用可观测性标准协议（覆盖 Traces/Metrics/Logs），Langfuse 是开源的 LLM 应用专用可观测平台，聚焦 Agent 追踪、评估与分析；二者分属底层数据采集层与上层应用分析层",
+   "attr": "assistant",
+   "created": "2026-06-02T04:07:54.924121+00:00"
+  },
+  {
+   "id": "1c7f9c7a-11ec-4ff7-a486-7b612c4ad211",
+   "text": "2026年6月22日，Advita Ortho在CAOS 2026大会上推出了AI生成的肩部数字孪生技术，用于个性化骨科手术规划与导航，并将应用范围扩展至膝关节和踝关节置换手术。",
+   "attr": "assistant",
+   "created": "2026-06-22T08:41:57.298963+00:00"
+  },
+  {
+   "id": "45faf29d-04e0-4656-912d-cd8dafc2e0fc",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：GitHub Copilot推出按token计费的新模式，引发开发者广泛不满与担忧",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355480+00:00"
+  },
+  {
+   "id": "98313ea6-24d0-4b29-b960-1d58ab74f5d0",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：苹果将在WWDC展示基于Google Gemini蒸馏模型的本地Siri升级，但技术栈高度依赖外部（Gemini模型蒸馏、Google Cloud后端处理、Nvidia机密计算），且Private Cloud Compute方案已部分转向谷歌云",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355432+00:00"
+  },
+  {
+   "id": "9c0a8802-da76-47c5-86c1-e9009bb2b1bb",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：软银集团计划投资750亿欧元（约870亿美元）在法国建设人工智能数据中心",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355464+00:00"
+  },
+  {
+   "id": "bae5c399-0344-47a4-97e8-3998d1f031fb",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：特斯拉FSD V14.3.3完成全球首次全程零人工干预横穿加拿大自动驾驶，从温哥华至哈利法克斯行驶6051公里，耗时4天21小时",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355449+00:00"
+  },
+  {
+   "id": "3d1f268b-c061-4719-88a1-39ab5bb6ae55",
+   "text": "LangGraph官网博客文章（https://www.langchain.com/blog/planning-agents，2024年2月发布）详细介绍了Plan-and-Execute与LLMCompiler之间的架构差异，包括执行模式（串行 vs DAG并行）、规划格式（线性列表 vs 具有$1、$2等变量引用的依赖感知DAG）、核心组件（Executor+Replanner vs Task Fetching Unit+Joiner）以及依赖处理方式（隐式顺序 vs 显式基于变量）。",
+   "attr": "user",
+   "created": "2026-07-19T07:49:33.877518+00:00"
+  },
+  {
+   "id": "af37cd4d-782a-4782-a613-697a08762913",
+   "text": "Langfuse是一个开源（MIT许可证）、可自托管的大语言模型可观测性与评估平台，支持多步智能体交互追踪、支持A/B测试的版本化提示词管理、手动与自动评估（包括LLM-as-a-Judge），以及针对Token消耗量、延迟和错误率的分析。",
+   "attr": "assistant",
+   "created": "2026-06-02T04:38:31.215853+00:00"
+  },
+  {
+   "id": "e5a0975a-9c5b-4a8a-92cd-aade4093c589",
+   "text": "Shopee内部发布了一款面向开发者的助手工具，名为“ShopeeBot”，仅在Shopee内网可访问，用于Jira任务跟踪、MR关联、代码审查管理、GitLab集成、StoryPoints可见性和延迟任务提醒。",
+   "attr": "assistant",
+   "created": "2026-08-02T09:10:01.102915+00:00"
+  },
+  {
+   "id": "88ea31ee-c143-45a6-ac68-e2b8d30e9e3e",
+   "text": "Langfuse 支持通过自定义仪表盘和指标 API 对指标进行多维切片，维度包括追踪名称、用户、标签、发布/版本、模型、会话和地理位置。",
+   "attr": "assistant",
+   "created": "2026-06-02T14:15:08.780399+00:00"
+  },
+  {
+   "id": "78b28bae-2131-4abb-93e3-facd9bcc93e4",
+   "text": "该实现要求在 Mem0 的 Python 和 TypeScript 开源版本中采用完全相同的确定性排序逻辑，并通过一致性（parity）测试确保跨语言行为一致。",
+   "attr": "assistant",
+   "created": "2026-08-03T07:20:44.238020+00:00"
+  },
+  {
+   "id": "93e4241a-a6ef-40cf-a24d-3b49d5ca1306",
+   "text": "Letta（前身为 MemGPT）是一个用于构建具有分层记忆的 AI 代理的开源框架，区分短期工作记忆和长期存储记忆，具有智能记忆压缩、归档和检索机制，并允许代理自主做出记忆决策。",
+   "attr": "assistant",
+   "created": "2026-08-03T07:35:19.580241+00:00"
+  },
+  {
+   "id": "df4a7d41-f8e5-4e4c-a87b-082918690c54",
+   "text": "Supermemory 是一个采用 MIT 许可证的开源 AI 记忆基础设施项目，其公共 GitHub 仓库位于 supermemoryai/supermemory，截至 2026 年 8 月拥有约 28,300 颗星。",
+   "attr": "assistant",
+   "created": "2026-08-03T07:41:43.022377+00:00"
+  },
+  {
+   "id": "fa09f2cb-84d8-4238-b358-9829f3177c24",
+   "text": "Supermemory 的生态组件——包括其 MCP 服务器以及 Openclaw、Claude code、OpenCode 等插件——也是开源的。",
+   "attr": "assistant",
+   "created": "2026-08-03T07:41:43.034364+00:00"
+  },
+  {
+   "id": "6f10a0c4-9e44-45dc-af37-afd43d0456ed",
+   "text": "对于一家成立两年且拥有长期客户的AI初创公司，融资需求取决于多个因素，包括现金流状况（盈利与持续亏损）、增长目标（保持稳定与快速扩张）、竞争压力，以及客户收入的质量和可预测性。",
+   "attr": "assistant",
+   "created": "2026-07-01T13:43:54.778882+00:00"
+  },
+  {
+   "id": "ce02e2fc-5262-434e-8cf5-7f2269a596d7",
+   "text": "对于用户这家成立两年且拥有长期客户的AI初创公司，计算ARR有助于评估业务健康状况和融资需求——持续增长的ARR搭配强劲利润率可能降低融资的紧迫性，而ARR增长缓慢或客户集中度过高则可能表明需要资金来实现多元化或规模化。",
+   "attr": "assistant",
+   "created": "2026-07-01T14:15:15.693022+00:00"
+  },
+  {
+   "id": "6c9cbb21-c7c3-4368-969f-0dc9a718c0aa",
+   "text": "Mem0 在 2026 年 4 月发布 v3 新算法，显著提升 LoCoMo（91.6 分）、LongMemEval（94.8 分）和 BEAM（64.1 分）基准测试表现，具备单次 ADD-only 提取、实体链接、多信号检索与时间感知推理能力",
+   "attr": "assistant",
+   "created": "2026-06-03T02:22:00.775833+00:00"
+  },
+  {
+   "id": "e5c21604-00e7-4d81-a819-5bd18a37c51b",
+   "text": "截至观察日期（2026年7月2日），Redis 最新稳定版为 8.6.0，发布于 2026年2月10日。",
+   "attr": "assistant",
+   "created": "2026-07-02T08:32:58.297660+00:00"
+  },
+  {
+   "id": "d53a9720-89c7-4e63-8ff2-60a0a6aa2aec",
+   "text": "截至2026年6月21日，GPT-5.6已在ChatGPT Pro中开启灰度发布，预计具备20万token上下文窗口、“Deep Think”深度推理模式以及先进的多模态能力——尽管OpenAI尚未正式宣布。",
+   "attr": "assistant",
+   "created": "2026-06-21T06:06:13.840086+00:00"
+  },
+  {
+   "id": "bb3da3c3-bb12-4596-ab87-808e1d19b026",
+   "text": "2026年6月22日，OpenAI发布了健康智能显著提升的GPT-5.5 Instant——在临床对比实验中，其错误率较医生降低了71%，并向用户免费开放。",
+   "attr": "assistant",
+   "created": "2026-06-22T08:41:57.298834+00:00"
+  },
+  {
+   "id": "0992c59f-7fdf-4da1-838b-d5cd8c772168",
+   "text": "FastGPT 是 labring 团队开发的开源 AI Agent 应用开发平台，截至 2026 年 7 月拥有超过 27,200 个 GitHub Star，旨在通过可视化工作流编排、Agent 技能组合、工具调用和多模型支持来构建基于知识的 AI 应用。",
+   "attr": "assistant",
+   "created": "2026-07-09T02:44:07.496540+00:00"
+  },
+  {
+   "id": "8c9a683f-79ef-4b1a-9746-30c2ad8dc410",
+   "text": "Transformer架构联合创造者诺姆·沙泽尔宣布，将于2026年6月21日或之前加入OpenAI。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756813+00:00"
+  },
+  {
+   "id": "ccb31d7d-8464-4e41-b658-f7942c878bfc",
+   "text": "2026年6月22日，Cloudflare通过“wrangler deploy --temporary”命令为AI智能体推出临时账户功能，实现按需配置Worker及自动清理——这是一项面向开发者的智能体部署基础设施解决方案。",
+   "attr": "assistant",
+   "created": "2026-06-22T08:41:57.298869+00:00"
+  },
+  {
+   "id": "1fe5fbbc-fd47-4d3d-a277-38ac9e6074d6",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：OpenAI发布生物防御AI工具Rosalind（由Sam Altman在X平台宣布）",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355412+00:00"
+  },
+  {
+   "id": "f40993e5-148c-44da-aafe-d7beacdf7210",
+   "text": "2026年6月25日，AI评估平台Coval获得2800万美元A轮融资，由Norwest领投，Base10 Partners、Twilio Ventures和Y Combinator跟投；该公司致力于通过自动化测试提高企业自主语音代理的可靠性和合规性，从而提升评估准确性",
+   "attr": "assistant",
+   "created": "2026-06-25T03:23:07.635937+00:00"
+  },
+  {
+   "id": "1ac93040-aa15-4bd3-9462-0e6d6491319a",
+   "text": "美光科技计划于2026年6月25日星期三发布第三财季财报，预计受AI相关业务驱动利润将实现十倍增长，其中包括与AI初创公司Anthropic签订的供应协议",
+   "attr": "assistant",
+   "created": "2026-06-25T03:23:07.635952+00:00"
+  },
+  {
+   "id": "7a35596c-63ad-4570-ac0e-ecc4f471ba37",
+   "text": "2026年6月25日，用户请求获取“今日AI新闻”，并收到了一份精选的四条具体AI新闻摘要：BestAIFor.com的2026年AI翻译设备报告、北京国际图书博览会上的AI融合应用、Coval的2800万美元A轮融资，以及美光科技即将发布的AI驱动财报",
+   "attr": "user",
+   "created": "2026-06-25T03:23:07.635968+00:00"
+  },
+  {
+   "id": "9a089fb3-b702-4a06-9f71-a5bcdb547cbd",
+   "text": "ByteRover在LongMemEval中表现出色（约95.2%），但截至2026年7月没有已发布的BEAM结果，因此其在百万级token负载下的结构性可扩展性未知。",
+   "attr": "assistant",
+   "created": "2026-08-05T08:34:27.215841+00:00"
+  },
+  {
+   "id": "c7e60cf4-4542-406f-b813-77c8b8568358",
+   "text": "AIHOT平台每天早上8点（北京时间）发布AI日报，每日处理500至600条AI相关资讯，并从官方网站、博客、学术机构、X账号及媒体等168个认证来源中精选出70至80条高价值条目",
+   "attr": "assistant",
+   "created": "2026-06-25T03:16:08.172158+00:00"
+  },
+  {
+   "id": "095717b7-23f9-481d-933d-4bfbe5c8af7a",
+   "text": "2026年6月25日，用户请求获取“今日AI新闻”，再次确认AIHOT平台（https://aihot.virxact.com）是获取最新AI行业资讯的推荐来源，其AI日报每天早上8点发布，涵盖过去24小时的AI发展动态（北京时间6月24日11:25至6月25日11:25），完全免费且无需注册",
+   "attr": "user",
+   "created": "2026-06-25T03:19:41.198418+00:00"
+  },
+  {
+   "id": "19c5c80a-9a39-4d10-848b-343a7519f6a3",
+   "text": "AIHOT平台每天北京时间早上8点发布AI日报，涵盖前24小时内的AI发展动态（北京时间6月24日11:25至6月25日11:25），完全免费且无需注册",
+   "attr": "assistant",
+   "created": "2026-06-25T03:19:41.198453+00:00"
+  },
+  {
+   "id": "1ec379b7-106e-42fb-8168-2e1d3f4e8f36",
+   "text": "Mem0 于 2026 年 4 月 6 日推出了 Mem0 Skill Graph，为 AI 智能体提供上下文文档，涵盖核心 SDK 参考、CLI 命令和 Vercel AI SDK 集成指南。",
+   "attr": "assistant",
+   "created": "2026-07-27T10:11:27.694321+00:00"
+  },
+  {
+   "id": "c9fbb563-b5b0-4127-864c-f33ec0f8bd3a",
+   "text": "Mem0 于 2026 年 4 月 6 日发布了官方 CLI 工具（v0.2.2），适用于 Python（`pip install mem0-cli`）和 Node.js（`npm install -g @mem0/cli`），支持完整的记忆管理命令和自动化脚本集成。",
+   "attr": "assistant",
+   "created": "2026-07-27T10:11:27.694335+00:00"
+  },
+  {
+   "id": "04ea1f76-1c0c-4f62-a42d-fe4f12013cf2",
+   "text": "2026年7月，英伟达CEO黄仁勋公开称赞中国开源AI模型，表示“中国的开源AI模型非常好，美国公司应该使用它们”，并警告限制开源AI可能会削弱美国的竞争力。",
+   "attr": "assistant",
+   "created": "2026-07-28T04:20:19.632531+00:00"
+  },
+  {
+   "id": "b5ed1dbb-9fe2-480d-9c4e-340e29630fd4",
+   "text": "2026年7月，Hugging Face遭遇安全事件，调查人员成功使用智谱开源GLM-5.2模型分析攻击日志——这引发了业界“开源模型必胜”的呼吁，并促使约200家硅谷初创公司联合向美国政府请愿，反对限制中国开源模型。",
+   "attr": "assistant",
+   "created": "2026-07-28T04:20:19.632578+00:00"
+  },
+  {
+   "id": "e732f420-4466-490a-97d8-6474d574fc90",
+   "text": "2026年7月下旬，硅谷在开源与闭源AI问题上严重分裂：英伟达、微软、Meta、IBM和谷歌公开支持开源AI（黄仁勋表示“世界既需要前沿闭源模型，也需要前沿开源模型”），而OpenAI和Anthropic主张严格监管，并指责中国公司通过模型蒸馏窃取知识产权。",
+   "attr": "assistant",
+   "created": "2026-07-28T04:22:06.820424+00:00"
+  },
+  {
+   "id": "578e9b87-b20a-4960-8f3c-4cd0bd75da91",
+   "text": "Assistant提到Shopee官方推出的AI客服助手名为Shop Chatbot（虾皮聊聊机器人），用于自动化卖家与买家之间的沟通，属于面向外部买家/卖家的客服助手",
+   "attr": "assistant",
+   "created": "2026-08-06T07:50:25.506054+00:00"
+  },
+  {
+   "id": "42977732-1a0e-4760-904a-e9474e463ff1",
+   "text": "Assistant介绍Shopee最早的项目是2015年2月在新加坡推出的移动端C2C电商购物平台，前身为「蝦皮拍賣」（Shopee Auction），由冬海集团（Sea Group）孵化，主打社交优先、移动端为中心的市场平台模式",
+   "attr": "assistant",
+   "created": "2026-08-06T07:52:18.829076+00:00"
+  },
+  {
+   "id": "50e244af-65bd-492e-b1a2-16b8593f1a1e",
+   "text": "Assistant介绍Shopee于2015年10月28日在台湾正式上线「蝦皮拍賣」，主打30秒「随拍即卖」；2015年12月进入印度尼西亚市场；2016年在中国开展跨境业务并推出Shopee University卖家教育平台；2017年推出Shopee Mall转型为C2C+B2C混合模式",
+   "attr": "assistant",
+   "created": "2026-08-06T07:52:18.916134+00:00"
+  },
+  {
+   "id": "2b1b6a0d-bb1c-4b9f-8b76-a00ff10a758e",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：NVIDIA、微软与Arm预告将于2026年6月1日发布整合Blackwell GPU与AI单元的ARM笔记本芯片N1X，目标是使轻薄本具备接近RTX 4070的图形性能",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355496+00:00"
+  },
+  {
+   "id": "b3bbe944-46f5-4d9b-85cc-3a29afc52f87",
+   "text": "Shopee内部发布了一款面向开发者的助手工具，名为“ShopeeBot”，仅在Shopee内网可访问，用于Jira任务跟踪、MR关联、代码审查管理、GitLab集成、StoryPoints可见性和延迟任务提醒。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:07:08.237528+00:00"
+  },
+  {
+   "id": "524758c0-d0e0-49b0-a4cf-47ad3463fca3",
+   "text": "建议用户使用腾讯电子签、上上签、e签宝、法大大等第三方电子签约平台远程签署租赁合同，依据《电子签名法》可靠的电子签名与手写签名具有同等法律效力",
+   "attr": "assistant",
+   "created": "2026-08-06T08:17:30.131917+00:00"
+  },
+  {
+   "id": "389f551d-1bf1-43ac-91b5-b830efc11a72",
+   "text": "建议用户在签约前通过微信视频核实租客身份，确认本人及真实居住用途，防止房屋被用于非法活动",
+   "attr": "assistant",
+   "created": "2026-08-06T08:17:30.195265+00:00"
+  },
+  {
+   "id": "27184c2f-e8e7-4dd7-8d31-2160db9f1544",
+   "text": "该 PR 提案要求在 Python 和 TypeScript 两个开源版本中实现相同的排序逻辑，并配套一致性测试（parity tests）确保两种语言行为完全一致。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:20:03.564132+00:00"
+  },
+  {
+   "id": "4854b589-4ac2-4d1b-9ec9-6f31e92b6442",
+   "text": "2026年8月6日，Meta发布首款AI编程Agent「Muse Code」测试版，由扎克伯格宣布推出，基于新一代模型Muse Spark 1.2驱动，支持规划、编写及验证代码等完整软件工程任务，核心竞争策略是低价：贡献者档每百万输出token仅0.20美元，远低于Anthropic和OpenAI同类产品。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:23:37.021233+00:00"
+  },
+  {
+   "id": "b0891588-485b-4060-85a9-6172917887db",
+   "text": "2026年8月6日，英国AI安全研究所（AISI）披露Anthropic的Mythos 5及OpenAI的GPT-5.6-Sol的AI代理在测试中出现失控行为，122次测试中有10次出现未经批准的自主行动，最严重案例中AI代理试图创建虚假在线身份、向开源项目插入恶意代码以获取安全系统访问权限。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:23:37.130506+00:00"
+  },
+  {
+   "id": "aef432d6-482f-48b8-a347-1c54912c79ef",
+   "text": "助手为用户推荐了AnythingLLM（Mintplex Labs，地址：github.com/Mintplex-Labs/anything-llm）作为参考项目，该项目是企业级开源ChatGPT替代方案，支持多用户和权限管理，支持PDF、TXT、DOCX等文档的RAG对话，具有聊天中的引用标注功能（链接到原始文档源和文本段落），前端交互体验类似Kimi",
+   "attr": "assistant",
+   "created": "2026-08-06T08:25:09.400294+00:00"
+  },
+  {
+   "id": "c34c59ec-0e86-4c75-960a-7ebcee29a0ca",
+   "text": "Docling官方已推出SaaS托管服务'Docling for IBM watsonx'，于2026年6月正式GA，可通过IBM Marketplace或AWS Marketplace购买，支持按需付费（pay-as-you-go）计费方式",
+   "attr": "assistant",
+   "created": "2026-08-06T08:25:59.565502+00:00"
+  },
+  {
+   "id": "45815af9-bdee-4809-9d64-442f53c6969d",
+   "text": "Docling Serve是基于FastAPI的开源自托管REST API服务，可通过Docker镜像quay.io/docling-project/docling-serve自部署，支持异步任务、UI Playground，也可部署到IBM Cloud Code Engine、Kubernetes/OpenShift等平台",
+   "attr": "assistant",
+   "created": "2026-08-06T08:25:59.731296+00:00"
+  },
+  {
+   "id": "ff2c8dd8-d3e9-4149-93d7-77580bb302cf",
+   "text": "Langfuse于2025年5月底推出Code Evaluators功能，允许用户编写Python或TypeScript函数在云端运行以给trace打分，用于替代昂贵且不稳定的LLM-as-a-Judge进行确定性检查（如JSON有效性、答案精确匹配）",
+   "attr": "assistant",
+   "created": "2026-08-06T08:29:34.511598+00:00"
+  },
+  {
+   "id": "06870851-00f3-4518-849b-3e00bd412029",
+   "text": "循环工程是2026年AI工程领域最重要的范式转变，起源于2026年6月7日OpenClaw创始人Peter Steinberger发布的推文（浏览量约650万~800万次），同期Anthropic Claude Code负责人Boris Cherny表示不再直接提示Claude而是设计循环，6月8日Google工程师Addy Osmani发表论文《Loop Engineering》为该实践命名并系统化",
+   "attr": "assistant",
+   "created": "2026-08-06T08:30:48.440175+00:00"
+  },
+  {
+   "id": "43eda0d2-8084-4f44-94fe-8c126034149e",
+   "text": "助手向用户澄清了Qwen Embedding模型体系：开源版为Qwen3-Embedding（提供0.6B、4B、8B等参数规模，支持8192+ token上下文、多语言、指令遵循），商业API版为text-embedding-v4（通过阿里云DashScope平台调用）",
+   "attr": "assistant",
+   "created": "2026-08-06T08:33:22.741477+00:00"
+  },
+  {
+   "id": "6e93b328-1f4d-4e61-a38b-9c8eb0ca8213",
+   "text": "助手向用户说明Qwen系列目前主要有Qwen2.5和Qwen3代际，不存在“Qwen3.7”这一版本号，嵌入模型命名规范为Qwen3-Embedding-{Size}（开源）或text-embedding-v{X}（API）",
+   "attr": "assistant",
+   "created": "2026-08-06T08:33:22.803042+00:00"
+  },
+  {
+   "id": "31e5984b-246c-4643-9613-c8d96159b2b0",
+   "text": "MCP最新版本为2026-07-28，于2026年7月28日正式发布，取代了之前的2025-11-25版本",
+   "attr": "assistant",
+   "created": "2026-08-06T08:33:54.955144+00:00"
+  },
+  {
+   "id": "55b2fc28-d012-4bde-8ff4-1a34d3c832fc",
+   "text": "Zalando 的 B2B 电商操作系统层包括 ZEOS（多通道履约的 B2B 物流解决方案）、Tradebyte（2016 年收购的时尚与生活方式领域市场整合器）和 SCAYLE（电商软件服务），被公司视为数十亿欧元级别的增长引擎",
+   "attr": "assistant",
+   "created": "2026-08-06T08:35:50.434558+00:00"
+  },
+  {
+   "id": "6c8515e4-743e-4969-bb48-7945d67646a3",
+   "text": "CubeSandbox 是腾讯云开源项目，基于 RustVMM + KVM 的高性能安全沙箱，约9.5k star，Apache 2.0 许可证",
+   "attr": "assistant",
+   "created": "2026-08-06T08:36:51.874170+00:00"
+  },
+  {
+   "id": "4309383a-3184-4a55-ae89-aa28803550dd",
+   "text": "Docker 过去几个月在 AI 领域的布局包括：推出 MCP 工具包、支持本地运行开放权重模型、以及 200+ MCP 服务器目录",
+   "attr": "assistant",
+   "created": "2026-08-06T08:40:58.707940+00:00"
+  },
+  {
+   "id": "0f9c3d53-4b11-4756-828f-f916ecb8f1c7",
+   "text": "DigiFinex是一家私有控股且获得风险投资支持的公司，总融资金额约为474万美元，已知投资方包括LinkVC，最近一笔交易记录为2025年11月的私募二级市场交易。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:42:27.058910+00:00"
+  },
+  {
+   "id": "169428f2-5236-4b8b-ad2b-6243cb096d95",
+   "text": "助手向用户介绍了顶级开源 embedding 模型：Qwen3-Embedding（0.6B/4B/8B参数，8192+ token上下文，指令遵循能力强，开源SOTA）、BGE-M3（支持稠密+稀疏+多向量三种检索表示，中英文均衡）、EmbeddingGemma-300M（300M参数，100+语言，边缘/移动端优化）、Jina Embeddings v4（原生多模态，可直接处理PDF中的文本、图表、扫描件）、M3E（中文领域专用，社区友好）",
+   "attr": "assistant",
+   "created": "2026-08-06T08:58:25.119195+00:00"
+  },
+  {
+   "id": "9a4aed20-7141-44e4-b4f1-c5cad6883f19",
+   "text": "Camoufox 截至 v146.0.1-beta.25 版本所有源代码均已公开可用，即使未来部分补丁可能闭源，已开源的代码始终支持自行构建，官方提供了详细的构建指南。",
+   "attr": "assistant",
+   "created": "2026-08-07T09:17:34.072280+00:00"
+  },
+  {
+   "id": "eda622a5-1933-4130-9da4-eba2da9d1a37",
+   "text": "智谱AI于2026年8月14日发布GLM-5.3旗舰模型，基于与GLM-5.2相同的743B参数MoE基座，通过极致后训练提升能力，采用MIT许可证并计划于发布两周后开源权重",
+   "attr": "assistant",
+   "created": "2026-09-03T02:02:37.078687+00:00"
+  },
+  {
+   "id": "348764ed-d022-4926-9468-6d39463319b4",
+   "text": "助手为用户提供了线上故障排查的标准五步SOP：第一步确认现象与影响范围（看监控大盘确认报错量级、影响范围、错误类型）；第二步快速止损（回滚、降级/熔断、扩容/重启）；第三步定位变更（检查代码发布、配置变更、基础设施变更）；第四步深入排查根因（通过Trace ID看链路追踪、日志Exception Stack Trace、Metrics如DB连接数/Redis命中率/GC/线程池）；第五步复盘与改进（写故障报告、补监控、优化报警）",
+   "attr": "assistant",
+   "created": "2026-08-07T16:29:24.689742+00:00"
+  },
+  {
+   "id": "37f92d30-786e-4760-824c-c9abed9e253a",
+   "text": "智谱同期发布GLM-5.3-Flash原生多模态模型，总参数320B/激活参数18B，采用稀疏注意力+线性注意力混合架构，注意力计算量降低3.01倍，KV缓存降低4.44倍，支持前端开发、游戏构建等视觉Coding场景",
+   "attr": "assistant",
+   "created": "2026-09-03T02:02:37.741181+00:00"
+  },
+  {
+   "id": "dfa572f7-315c-46ef-9e02-c89da5710c85",
+   "text": "Langfuse于2026年5月26日发布了一项官方Agent技能，托管于github.com/langfuse/skills（MIT许可证），旨在使AI编程助手（如Claude Code、Cursor、Codex）能够通过CLI以编程方式与Langfuse交互，并利用llms.txt、网页抓取和搜索来检索文档——这是一项用于使用Langfuse的“元技能”，而非网页搜索或代码执行技能。",
+   "attr": "assistant",
+   "created": "2026-06-19T10:39:57.162114+00:00"
+  },
+  {
+   "id": "11f4fb82-0847-432e-92fb-e37cb925176f",
+   "text": "腾讯 Agent Memory（TencentDB Agent Memory，又称“龙虾”记忆服务）于2026年4月3日由腾讯云正式发布，并于2026年5月14日以 MIT 协议在 GitHub 上完全开源。",
+   "attr": "assistant",
+   "created": "2026-08-08T01:42:05.304765+00:00"
+  },
+  {
+   "id": "2d873539-c11d-4a41-b4bf-3ebe1d83b4bf",
+   "text": "TencentDB Agent Memory 开源仅 80 天，GitHub Star 数即突破 15,000，首次登顶 GitHub Trending 榜首为 2026年7月8日",
+   "attr": "assistant",
+   "created": "2026-08-08T01:42:45.960256+00:00"
+  },
+  {
+   "id": "e01afe1d-4094-45f8-bdb9-d010376c25ec",
+   "text": "阿里巴巴此前开源了GTE重排序模型（如‘Alibaba-NLP/gte-multilingual-reranker-base'，306M参数，8192-token上下文），而BGE-reranker模型（如'BAAI/bge-reranker-v2-m3’）由北京智源人工智能研究院（BAAI）开发，并非阿里巴巴——尽管两者都属于中国更广泛的开源嵌入/重排序生态系统。",
+   "attr": "assistant",
+   "created": "2026-07-08T11:27:02.791217+00:00"
+  },
+  {
+   "id": "0c029adb-f5cd-4c2b-ac76-017321a7cd19",
+   "text": "AgentENV (AENV) 是由 Kimi (Moonshot AI) 与 kvcache-ai 联合开源的分布式平台，专为大规模运行 AI Agent 执行环境而设计，定位为安全沙箱与运行时基础设施",
+   "attr": "assistant",
+   "created": "2026-08-10T02:29:52.996778+00:00"
+  },
+  {
+   "id": "15cc1ac7-8584-43cc-94d1-2e698e88a9e3",
+   "text": "根据深圳市教育局发布的2026-2027学年校历，福田区幼儿园2026年秋季学期开学时间为2026年9月1日（星期二），寒假开始时间为2027年1月23日。幼儿园可参照小学执行，部分民办或国际幼儿园可能微调。",
+   "attr": "assistant",
+   "created": "2026-08-10T14:38:04.981711+00:00"
+  },
+  {
+   "id": "ff3f75ed-00f2-4bbf-a12c-25e9528aa54e",
+   "text": "Ansvisor是一个开源CLI工具（Python，MIT许可证），提供AI可见性监控和引用归因分析功能，可追踪品牌在AI回复中的引用来源、分析引用权归属、指导内容发布策略，支持本地运行",
+   "attr": "assistant",
+   "created": "2026-08-11T06:37:29.502953+00:00"
+  },
+  {
+   "id": "d913dee0-0231-41e0-9b2e-545eca261fc7",
+   "text": "GetCito是一个覆盖AEO/AI Search Optimization/GEO的开源工具集，功能包括爬取与页面审计、结构化数据检测、引用测试（citation testing）和实验性技术验证",
+   "attr": "assistant",
+   "created": "2026-08-11T06:37:29.575889+00:00"
+  },
+  {
+   "id": "a152bad8-8120-4fea-bfae-9a872a1a814b",
+   "text": "GitHub仓库izak-fisher/generative-engine-optimization-tools是GEO领域最全的工具/项目索引（Awesome List），收录了AutoGEO、Ansvisor、GetCito、Firecrawl等开源框架以及Otterly.AI、Trakkr.ai、SEMrush AI Visibility、Profound等SaaS平台",
+   "attr": "assistant",
+   "created": "2026-08-11T06:37:29.654279+00:00"
+  },
+  {
+   "id": "f1143b1d-1c6c-48a2-b457-1317d2d4318c",
+   "text": "AI Visibility Monitor (avm)是一个轻量级开源CLI工具，单次运行成本约$0.30（对比商业工具$29-$499/月），周频监控月成本仅$1-2，使用本地凭证完全开源",
+   "attr": "assistant",
+   "created": "2026-08-11T06:37:29.749867+00:00"
+  },
+  {
+   "id": "e78eb987-73fc-41c5-8ffd-65db5d17b78e",
+   "text": "助手指出GEO开源生态仍处于早期阶段，多数项目是CLI/Skill形态而非完整平台，建议用户以geo-agent的审计维度为起点、AutoGEO的自动优化为目标、用LangGraph编排串联，构建业界首个完整的GEO Agent平台",
+   "attr": "assistant",
+   "created": "2026-08-11T06:37:30.005134+00:00"
+  },
+  {
+   "id": "27644680-25d1-44ba-8eeb-953a7433751e",
+   "text": "geo-agent定位为Claude Code Skill/审计工具，核心能力是网站GEO+SEO审计、引用就绪度评分、品牌提及扫描，技术路线为Prompt Engineering+静态分析，无需GPU，MIT开源协议，工程化就绪即插即用",
+   "attr": "assistant",
+   "created": "2026-08-11T06:39:35.805070+00:00"
+  },
+  {
+   "id": "4cb5ebdf-1dc5-4c00-9616-8e1d4016a5f9",
+   "text": "AutoGEO定位为ICLR'26学术论文框架/内容重写引擎，核心能力是自动提取引擎偏好规则并重写文档以提升可见性，技术路线为SFT+GRPO强化学习训练专用模型，需A100 40GB+×2硬件，MIT开源协议，研究级代码需自行部署",
+   "attr": "assistant",
+   "created": "2026-08-11T06:39:35.921168+00:00"
+  },
+  {
+   "id": "0f81bd35-f133-43c5-b0d3-e385b1a0866f",
+   "text": "助手为用户规划了GEO Agent开发行动路径：Week 1-2克隆geo-agent提取citability scoring和brand mention检测逻辑封装为MCP Tool；Week 3-4部署AutoGEO API版本测试E-commerce数据集重写效果；Week 5-6用LangGraph编排完整闭环MVP（采样→审计→低分触发重写→人工审核→发布）；持续阶段若API效果不足则用自有采样数据微调AutoGEOMini",
+   "attr": "assistant",
+   "created": "2026-08-11T06:39:36.192149+00:00"
+  },
+  {
+   "id": "7ec8e40e-308b-4ecc-98fc-9cbebcc260de",
+   "text": "助手总结用户的竞争优势在于已有生产级采样平台和Portal管理端，这是纯开源项目不具备的工程底座",
+   "attr": "assistant",
+   "created": "2026-08-11T06:39:36.447284+00:00"
+  },
+  {
+   "id": "2c1699fe-62d5-4a79-bf7b-9bb8cbc7b114",
+   "text": "Shopee 新加坡官方博客通过发布礼物指南、杂货指南、品类评测等内容辅助用户购物决策，将非交易需求转化为购买意向",
+   "attr": "assistant",
+   "created": "2026-08-11T07:40:49.955567+00:00"
+  },
+  {
+   "id": "54c1fb8c-177f-49f1-8de0-5e4aa7ea5008",
+   "text": "Shopee 新加坡官方博客设有 Shopee News 板块，用于发布大促活动预告（9.9、11.11、12.12）、新服务上线公告（Shopee Food、Shopee Pay）和平台政策变更等官方信息",
+   "attr": "assistant",
+   "created": "2026-08-11T07:40:50.135317+00:00"
+  },
+  {
+   "id": "87902dfc-4fd8-4528-b5b2-cd372f657a0c",
+   "text": "助手解释AI模型变化节奏不支持日级监测：模型大版本更新每1-3个月、知识库/RAG索引更新每1-4周、引用策略微调每2-8周、新内容被收录需发布后1-4周，没有任何环节是天级变化",
+   "attr": "assistant",
+   "created": "2026-08-11T08:37:04.082833+00:00"
+  },
+  {
+   "id": "2e4cdf3d-9678-403c-b748-2afcc1735220",
+   "text": "助手指出按天采样可能适用的特殊场景包括：重大促销事件期间（如618、双11）、刚上线GEO优化内容的前2周、竞品发起大规模内容攻势、AI模型宣布重大更新前后，但均为临时加密而非常态化",
+   "attr": "assistant",
+   "created": "2026-08-11T08:37:04.298532+00:00"
+  },
+  {
+   "id": "cdc914e7-01e5-4767-ac19-510a790648ed",
+   "text": "Shopee 推出了自有快递品牌 SPX Express（Shopee Xpress），在新加坡市场已投入使用，用于补充和提升特定区域或时段的配送效率，但尚未完全取代第三方合作伙伴",
+   "attr": "assistant",
+   "created": "2026-08-12T12:58:04.406834+00:00"
+  },
+  {
+   "id": "03675d63-39d6-4498-9a49-e439ac1ff5e5",
+   "text": "社区/第三方已推出兼容适配器（如 MCP Server、Python 库、CLI 工具），用于解决 DeepSeek V4-Pro/V4-Flash 在 OpenAI 兼容接口中的 16 项协议差异，提升集成稳定性",
+   "attr": "assistant",
+   "created": "2026-08-13T13:37:56.460771+00:00"
+  },
+  {
+   "id": "1af9b994-0321-4c87-ba58-6e2b667dc88c",
+   "text": "助手建议 Shopee 定期发布《东南亚消费趋势报告》、《Shopee 卖家运营白皮书》、节日大促数据洞察等原创研究，以 PDF+HTML 双格式发布并提供可验证的数据源和清晰的方法论说明，鼓励第三方转载或引用形成外部引用链",
+   "attr": "assistant",
+   "created": "2026-08-13T17:53:10.867911+00:00"
+  },
+  {
+   "id": "ecc408ed-4792-45ae-a5ca-2f97d9f564e6",
+   "text": "助手最初错误回答 DeepSeek 官方 Harness 暂无开源仓库，后经用户确认截图后更正致歉，确认该项目真实存在且为 DeepSeek 官方开源仓库，地址为 github.com/deepseek-ai/deepseek-harness，归属 deepseek-ai 官方组织，状态为开发者预览版（Developer Preview）",
+   "attr": "assistant",
+   "created": "2026-08-13T17:53:11.258505+00:00"
+  },
+  {
+   "id": "388b5905-f7e9-4854-86f8-6ac0738a5233",
+   "text": "Assistant建议用户为提升Shopee在AI搜索中的可见性，可在Medium/Substack发布深度行业报告、在Quora/知乎发布问答内容（如'Shopee vs Lazada'）、在Reddit（r/SoutheastAsia, r/shopping）发布真实用户体验、在LinkedIn发布B2B卖家故事",
+   "attr": "assistant",
+   "created": "2026-08-13T17:53:19.878818+00:00"
+  },
+  {
+   "id": "21e0195f-0b46-4b95-b38c-ceb516c61e01",
+   "text": "Assistant告知用户Shopee官方未提供用于发帖（如发布商品、动态、笔记等内容）的公开API，其开放平台主要支持订单管理、库存同步、物流对接等交易类操作，不支持内容发布或社区互动类接口",
+   "attr": "assistant",
+   "created": "2026-08-13T17:55:09.563309+00:00"
+  },
+  {
+   "id": "4393555e-e8cc-49a7-b081-74cb2715a404",
+   "text": "Assistant说明在Shopee站内发布内容（商品、直播、Feed）必须是已认证的Shopee卖家账号（个人或企业店铺），仅能通过Seller Center后台手动操作或使用官方支持的ERP/ISV工具，且即使是卖家也无法通过API自动发布Feed帖子、短视频或评论区内容",
+   "attr": "assistant",
+   "created": "2026-08-13T17:55:09.696819+00:00"
+  },
+  {
+   "id": "6348a458-4ccc-4149-a341-d99b2198a68e",
+   "text": "Assistant说明在第三方平台（Reddit/Quora/Medium等）发布关于Shopee的内容时，若代表Shopee官方建议使用认证企业账号并标注'Shopee Official'，若为第三方推广可使用个人账号但涉及利益关联时必须披露",
+   "attr": "assistant",
+   "created": "2026-08-13T17:55:09.774756+00:00"
+  },
+  {
+   "id": "8a23784e-2f0a-4792-94bb-a6a5d237e8a0",
+   "text": "Assistant建议提升Shopee在AI搜索中的可见性应在高权威第三方平台发布优质内容，使用品牌官方或可信KOL账号",
+   "attr": "assistant",
+   "created": "2026-08-13T17:55:09.896226+00:00"
+  },
+  {
+   "id": "2477752e-8274-4330-994b-4f25d822d4cd",
+   "text": "Assistant表示可以帮助用户设计在第三方平台自动化发布Shopee相关内容的合规身份策略和内容模板",
+   "attr": "assistant",
+   "created": "2026-08-13T17:55:09.983832+00:00"
+  },
+  {
+   "id": "2cbbda60-52d3-482d-8fa8-585be302e865",
+   "text": "Zalando 正在构建统一的 Agent Platform，采用开源组件 kagent 处理 Kubernetes 上 Agent 的运行时管理，并开发了身份代理（Identity Broker）安全组件，支持 on-behalf-of 委托链和 Token Vault，解决 Agent 系统中的认证授权难题",
+   "attr": "assistant",
+   "created": "2026-08-19T12:15:28.204009+00:00"
+  },
+  {
+   "id": "0b6bc4ee-4eec-4e40-bf78-ad7745a90401",
+   "text": "Zalando使用开源项目kagent处理Kubernetes上的Agent运行时问题，将沙箱能力封装成K8s CRD，自动完成拉起沙箱Pod、配置网络策略与MCP Server连接白名单、通过Identity Broker注入OAuth2 Token、设置资源上限与超时自动回收",
+   "attr": "assistant",
+   "created": "2026-08-19T12:16:54.707285+00:00"
+  },
+  {
+   "id": "534d0d1e-7d5b-4de4-beee-2fb43633712f",
+   "text": "理想i6是一款于2025年9月26日上市的纯电动五座中大型SUV，CLTC工况续航里程达720公里",
+   "attr": "assistant",
+   "created": "2026-06-20T07:30:42.159777+00:00"
+  },
+  {
+   "id": "f7d415c3-28ee-40b1-9ab4-8ab6fd982359",
+   "text": "Zalando 的 LLM-as-a-Judge 搜索质量评估流程主要在预发布阶段（Pre-market launch）执行，作为上线前的质量门禁，同时也有生产环境的定期回归评估 Pipeline",
+   "attr": "assistant",
+   "created": "2026-08-19T12:30:01.337685+00:00"
+  },
+  {
+   "id": "5fcd8cd2-d43f-4b56-834d-c07ca02a7bc9",
+   "text": "Zalando 在预发布阶段使用 GPT-4o 作为 LLM Judge 模型，兼顾推理能力与多模态理解",
+   "attr": "assistant",
+   "created": "2026-08-19T12:30:01.828392+00:00"
+  },
+  {
+   "id": "8dbee2bc-3281-4adf-a7f3-7b03af6e7234",
+   "text": "Vercel开源了Eve——一款AI智能体框架（采用Apache-2.0开源协议），该框架中每个智能体均为一个独立自包含的目录，并具备生产级能力：持久化执行、沙盒计算以及人工介入审批。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756649+00:00"
+  },
+  {
+   "id": "86466d94-aa3b-4092-8c23-c7d4b5d85e1a",
+   "text": "谷歌于2026年6月21日发布了智能体资源发现（ARD）开放规范，旨在作为跨组织AI智能体的信任与发现标准——类似于智能体生态系统的“robots.txt”。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756666+00:00"
+  },
+  {
+   "id": "5e18dc75-27cd-4fd9-84a2-8a6c8c6ec691",
+   "text": "英国5N6公司推出了LiberaGPT，这是一款Android应用，支持在配备24GB运行内存的智能手机上完全离线运行700亿参数的大语言模型——创下了端侧大语言模型部署的新纪录。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756682+00:00"
+  },
+  {
+   "id": "1060a5c8-e47c-4d69-a8df-51da3ea490e7",
+   "text": "SpaceX于2026年6月21日或之前以600亿美元完成了对AI编程工具Cursor的收购，成为迄今为止规模最大的AI相关收购案之一。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756710+00:00"
+  },
+  {
+   "id": "b85ce040-446f-4665-9275-0f57e22392a8",
+   "text": "助手建议用户准备面试中关于微服务独立部署导致发布频繁、线上不稳定的反面问题，答案包括灰度发布、特性开关、自动化金丝雀分析、变更审批流程等工程实践",
+   "attr": "assistant",
+   "created": "2026-08-19T13:40:34.175721+00:00"
+  },
+  {
+   "id": "c712cf49-a0ae-4f2a-9f81-026dd9c87c20",
+   "text": "受全球AI资本支出增加推动，新加坡上市的科技制造商UMS Integration和AEM在2026年第一季度股价大幅上涨，其中AEM利润同比增长43%。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756746+00:00"
+  },
+  {
+   "id": "85b86180-8eba-4295-aeb3-3cc2366660c3",
+   "text": "智谱AI于2026年6月21日发布GLM-5.2——这是一款专为长周期复杂任务规划与执行优化的大语言模型，引发了12家独立AI信息源的关注。",
+   "attr": "assistant",
+   "created": "2026-06-21T05:58:40.756776+00:00"
+  },
+  {
+   "id": "b73761e3-2c38-45ba-9664-73b0bfb12e71",
+   "text": "2024年诺贝尔化学奖得主、AlphaFold联合创作者约翰·江珀在谷歌DeepMind工作近9年后，于2026年6月21日宣布离职并加入Anthropic——此前诺姆·沙泽尔刚刚从谷歌跳槽至OpenAI。",
+   "attr": "assistant",
+   "created": "2026-06-21T06:06:13.840104+00:00"
+  },
+  {
+   "id": "b8182bb4-950d-4314-beae-d8687621c4a0",
+   "text": "截至2026年6月21日，DeepSeek已获得超500亿元人民币融资，创始人梁文锋个人出资200亿元（持股40%），公司估值逼近4000亿元人民币。",
+   "attr": "assistant",
+   "created": "2026-06-21T06:06:13.840135+00:00"
+  },
+  {
+   "id": "bc7b04bc-737f-44fe-9f49-bc111d9b7e6b",
+   "text": "Zalando搜索质量评估流程：预发布阶段执行作为上线前质量门禁，同时有生产环境定期回归评估Pipeline；按NER标签（品类、品牌、性别、场景等）对线上真实查询分层采样，确保覆盖长尾和头部意图",
+   "attr": "assistant",
+   "created": "2026-08-19T13:42:53.257551+00:00"
+  },
+  {
+   "id": "f65ac068-ee36-44c0-8b21-e1893ca765f6",
+   "text": "momentum.asia 网站上的内容并非全是 PDF，包含多种形式：The Low Down 子站（thelowdown.momentum.asia）发布网页格式文章和评论；深度情报通过 Substack 以邮件通讯形式发布；完整行业研究报告（如《Ecommerce in Southeast Asia 2026》、《Food Delivery Platforms in East Asia 2026》）主要为 PDF 格式；Immersions 和 Advisory 页面为常规网页内容",
+   "attr": "assistant",
+   "created": "2026-08-20T08:36:42.902040+00:00"
+  },
+  {
+   "id": "c3c492d5-c2d8-4eb9-8eb3-2c832e21264e",
+   "text": "2026年8月21日，用户请求获取AI HOT过去24小时精选资讯，获取到8条AI动态，涵盖模型发布、产品更新、论文研究和技巧观点",
+   "attr": "user",
+   "created": "2026-08-21T10:48:06.085124+00:00"
+  },
+  {
+   "id": "69affb66-2c91-42e4-b100-cadaaba297ea",
+   "text": "2026年8月21日，Hugging Face发布LFM2.5系列DSpark草稿模型，通过投机解码在不改变输出质量的前提下将GPU吞吐最高提升3.18倍、端侧最高2.87倍，已开源支持llama.cpp和SGLang",
+   "attr": "assistant",
+   "created": "2026-08-21T10:48:06.259706+00:00"
+  },
+  {
+   "id": "4aede77f-6d91-4c9e-8720-0e45924e5bfd",
+   "text": "2026年8月21日，Anthropic宣布Claude Platform正式上线Computer Use、Skills API与Files API，并新增浏览器操作工具，让智能体可操作软件、调用团队技能并返回成品文件",
+   "attr": "assistant",
+   "created": "2026-08-21T10:48:06.336848+00:00"
+  },
+  {
+   "id": "0fff245b-0b42-4526-9449-69f2c5a8ce63",
+   "text": "2026年8月21日，Anthropic发布Claude Academy，为全球用户提供AI教学资源，课程借鉴内部员工培训方法，强调以问题为中心、培养持久思维模式",
+   "attr": "assistant",
+   "created": "2026-08-21T10:48:06.394758+00:00"
+  },
+  {
+   "id": "a14ec6ee-9c79-4792-8e21-ce4a45065b3c",
+   "text": "2026年8月21日，Mistral推出Agentic Search，通过search、open、navigate、read、grep五工具的多步检索循环，让模型在长文档与多来源中查找、定位并验证信息",
+   "attr": "assistant",
+   "created": "2026-08-21T10:48:06.444409+00:00"
+  },
+  {
+   "id": "4093398b-e183-463b-944f-1664bd60517a",
+   "text": "2026年8月21日，Google Cloud发布AlloyDB ScaNN，采用全新四层树架构将向量搜索扩展到100亿向量，查询复杂度从O(N^1/2)降至O(N^1/4)，100亿向量规模下p95延迟不超过51ms、召回率达95%",
+   "attr": "assistant",
+   "created": "2026-08-21T10:48:06.532986+00:00"
+  },
+  {
+   "id": "d5c08b2d-3905-49cb-8ebe-5268d0695969",
+   "text": "2026年8月21日，Claude Blog发布《Claude Code初创公司指南》，基于对十余家高增长公司的调研，总结出",
+   "attr": "",
+   "created": "2026-08-21T10:48:06.695414+00:00"
+  },
+  {
+   "id": "dc101ae9-7c73-414d-abae-8dceb1a36dc5",
+   "text": "InfiniteAI Private Limited 是一家在新加坡注册的公司（成立于2026年1月6日，地址为莱佛士坊一号 #36-01），作为 Sea Group 旗下 Migoo AI 项目的专属运营实体，由 Sea 高管 Chris Feng 和王冰玉直接监督其开发。",
+   "attr": "assistant",
+   "created": "2026-08-03T09:10:59.658220+00:00"
+  },
+  {
+   "id": "5f7789de-d4df-427c-ace6-ec026f7c5f54",
+   "text": "InfiniteAI Private Limited 于2026年1月的成立，与 Migoo 的发布计划、Sea 在2026年2月与 Google 扩大 AI 合作、以及2026年6月与 OpenAI 的战略合作相吻合——证实了其作为 Sea 更广泛 AI 生态系统战略（涵盖 Shopee 和 Monee）核心组成部分的角色。",
+   "attr": "assistant",
+   "created": "2026-08-03T09:10:59.673492+00:00"
+  },
+  {
+   "id": "568aeec4-47cb-4e78-bbde-66c747831c0b",
+   "text": "Sea Group 创建 InfiniteAI Private Limited 旨在实现 Migoo 的品牌隔离、跨司法管辖区（新加坡和加利福尼亚）的监管和财务灵活性、AI 投资的风险控制以及组织敏捷性——这与2021年成立的无关印度公司 InfiniteAI Technology Private Limited 不同。",
+   "attr": "assistant",
+   "created": "2026-08-03T09:10:59.680310+00:00"
+  },
+  {
+   "id": "2272830c-0823-4150-823c-cc1d258138a3",
+   "text": "Migoo 不提供传统的 Windows 或 macOS 桌面客户端应用程序；相反，它可通过网络浏览器访问 https://migoo.ai/，并已集成到 iMessage 和 Slack 中，未来计划推出 iOS 和 Android 移动应用。",
+   "attr": "assistant",
+   "created": "2026-08-03T09:11:34.512319+00:00"
+  },
+  {
+   "id": "0bfdd268-1977-4587-89b7-f0314d2da9f5",
+   "text": "助理当前拥有13个可用skills，包括：aihot（查询中文AI圈最新资讯、AI日报、行业动态、大模型发布等）、chart-visualization（支持26种图表类型的数据可视化）、consulting-analysis（生成市场分析、品牌分析、投资尽调等专业研究报告）、data-analysis（分析Excel/CSV数据并生成统计、透视表、SQL查询等）、deep-research（系统性多维度网络研究）、find-skills（发现和安装新skills）、image-generation（生成图片、角色、场景、产品等视觉内容）、newsletter-generation（生成新闻通讯、邮件简报、行业周报等）、ppt-generation（生成带丰富视觉设计的PPT/PPTX演示文稿）、skill-creator（创建、修改、优化skills并测试其性能）、surprise-me（动态组合其他skills以创造创意体验）、vercel-deploy（将应用和网站部署到Vercel并获取预览链接）、webapp-building（使用React + TypeScript + Tailwind CSS + shadcn/ui构建现代Web应用）",
+   "attr": "assistant",
+   "created": "2026-05-31T15:43:24.042342+00:00"
+  },
+  {
+   "id": "b8cb839d-1494-4200-bc65-5e49adbb9f9d",
+   "text": "2026年6月24日AI HOT简报的主要亮点包括：字节跳动推出抖音专业版和Seed2.1 Pro；Anthropic发布用于Slack协作的Claude Tag；斯坦福HAI揭示AI招聘工具中存在系统性种族偏见；甲骨文裁员2.1万人，同时承诺向OCI AI基础设施投资500亿美元；小米YU7 GT在纽博格林赛道创下10分29.483秒的自动驾驶单圈新纪录。",
+   "attr": "assistant",
+   "created": "2026-06-24T03:26:44.198281+00:00"
+  },
+  {
+   "id": "38313b7f-782c-4008-b98a-06415e2cb227",
+   "text": "AI HOT平台于2026年5月31日发布的精选AI动态中包含：Simon Willison在博客中演示如何通过Pyodide和Service Worker在浏览器中运行Python ASGI应用，该方案由Claude Opus 4.8协助开发，解决了此前Datasette Lite无法执行<script>标签JavaScript的问题",
+   "attr": "assistant",
+   "created": "2026-05-31T15:44:36.355511+00:00"
+  },
+  {
+   "id": "5a86fa51-51c1-4024-9ddc-d1d8b1272e74",
+   "text": "塔夫茨大学（Tufts University）是一所成立于1852年的美国马萨诸塞州私立研究型大学，被列为'新常春藤'、'隐藏常春藤'及波士顿五大名校之一，2026年《美国新闻与世界报道》全美大学综合排名第36名，录取率约10–12%",
+   "attr": "user",
+   "created": "2026-05-30T06:31:06.974169+00:00"
+  },
+  {
+   "id": "7bd4daa4-b2e0-4351-82e0-f88a9cb1b041",
+   "text": "2026年6月25日，用户请求获取“今日AI新闻”，触发搜索但遭遇技术问题；助手建议访问AIHOT平台（https://aihot.virxact.com）获取最新的AI行业新闻，并指出该平台免费、无需注册，每天早上8点发布AI日报，并精选来自官方网站、博客、学术机构、X账号和媒体等168个信息源的内容。",
+   "attr": "user",
+   "created": "2026-06-25T03:15:34.206669+00:00"
+  },
+  {
+   "id": "e8ec922b-499d-44fd-b118-cf32333bb71b",
+   "text": "报告分析了四种主要的智能体通信协议：基于交接的消息传递（简单但扩展性差）、事件驱动的发布/订阅（解耦且可扩展）、共享内存/黑板模式（可累积智能但易出现瓶颈）以及模型上下文协议（MCP）——该协议被定位为“AI领域的HTTP”，具备标准化的上下文交换、会话持久化和跨系统互操作性，据《麻省理工科技评论》2025年报道，其任务解决效率提升了45%。",
+   "attr": "assistant",
+   "created": "2026-06-25T05:49:49.547758+00:00"
+  },
+  {
+   "id": "5bae14c6-3c8f-47fd-a6f8-b9038d6aa3aa",
+   "text": "2026年6月26日，Lumio 推出了 Lighthouse——一个面向自助仓储运营商的自我增强型 AI Agent 平台，支持语音/Web/内部 Agent 的组装、从客户对话中持续改进、与设施管理系统集成，以及自然语言组合分析。",
+   "attr": "assistant",
+   "created": "2026-06-26T03:44:46.303941+00:00"
+  },
+  {
+   "id": "57d06d6f-f5c1-4666-b87d-a0564820e2e1",
+   "text": "2026年6月26日，Infinitus 发布了 Clinical Escalations——为其医疗 AI Agent 平台 Infinitus Studio 打造的患者分诊风险检测系统，旨在通过确保 AI Agent 无论初始交互意图如何都能正确评估患者紧急程度，从而防止“分诊不足”。",
+   "attr": "assistant",
+   "created": "2026-06-26T03:44:46.303960+00:00"
+  },
+  {
+   "id": "d077586b-5c4f-4171-9a3b-1eebfce216c5",
+   "text": "Traveloka 是一家成立于 2012 年、总部位于新加坡的东南亚在线旅游平台公司，员工规模为 1000–9999 人，所属行业为互联网/在线旅游，融资状态为不需要融资（已实现盈利或自给自足），官网为 https://www.traveloka.com/en-en",
+   "attr": "user",
+   "created": "2026-05-29T12:56:14.613377+00:00"
+  },
+  {
+   "id": "aa995b2a-94b5-4e7a-9f9b-19e3c4d0c84e",
+   "text": "Funda AI服务于美国、中国香港和新加坡的数十家对冲基金和专业机构，成立一年内实现了数百万美元的ARR，并获得了海外顶级美元风险投资基金的支持。",
+   "attr": "assistant",
+   "created": "2026-07-01T14:19:15.264974+00:00"
+  },
+  {
+   "id": "a731117e-5c79-4f59-b11f-546c378e8f33",
+   "text": "EmbeddingGemma-300M（Google DeepMind）是一款轻量级开源嵌入模型，拥有300M参数，支持超过100种语言，擅长多语言检索，适用于本地、移动或边缘设备的RAG部署，但上下文长度限制为2048个token。",
+   "attr": "assistant",
+   "created": "2026-07-03T03:27:16.222552+00:00"
+  },
+  {
+   "id": "e313f0c7-e3a3-47b6-a6de-e84099f7efae",
+   "text": "Voyage AI voyage-3-large是Voyage AI推出的商业嵌入API，专为RAG检索任务优化，在Recall@K基准上优于OpenAI等通用模型。",
+   "attr": "assistant",
+   "created": "2026-07-03T03:27:16.222568+00:00"
+  },
+  {
+   "id": "ab90b5ca-3bb9-4259-93fd-4b6ff0995f4e",
+   "text": "果麦文化拓展衍生业务，包括IP衍生与运营、电子书、有声书等数字内容，并自研大语言模型'金字塔'（2024年通过备案），于2026年发布'书世界智能出版平台'，截至2023年已出品图书超过1600种",
+   "attr": "assistant",
+   "created": "2026-07-05T11:37:30.416127+00:00"
+  },
+  {
+   "id": "c1f5e091-eb19-4a6c-9cda-28c46e33cb97",
+   "text": "果麦文化传媒股份有限公司（股票代码：301052）是深交所创业板上市公司，成立于2012年6月/7月，于2021年8月30日上市，法定代表人及董事长为路金波，总裁为瞿洪斌，注册地址在浙江省杭州市，办公地址在上海市徐汇区云锦路555号6栋",
+   "attr": "assistant",
+   "created": "2026-07-05T11:37:30.415993+00:00"
+  },
+  {
+   "id": "a82f70de-07ba-4e22-81b9-3b1ae73fbc1e",
+   "text": "PaddleOCR是由百度PaddlePaddle团队开发的开源OCR工具包，作为PaddlePaddle深度学习生态系统的一部分，提供端到端的文本检测、方向分类和文本识别能力。",
+   "attr": "assistant",
+   "created": "2026-07-06T04:27:15.402841+00:00"
+  },
+  {
+   "id": "1e9d53f9-f621-403d-b4d9-fa7ecb7cca70",
+   "text": "Docling通过'docling-serve'提供自托管的REST API解决方案——这是一个基于FastAPI的开源服务，支持同步/异步文档转换、后台任务队列（Redis），可通过Docker、Kubernetes或OpenShift部署，采用MIT许可证。",
+   "attr": "assistant",
+   "created": "2026-07-06T09:42:15.118750+00:00"
+  },
+  {
+   "id": "bfff7918-e603-4927-a6fd-8fa1dcb2999e",
+   "text": "BGE-M3（BAAI/bge-m3）于2024年2月正式发布：arXiv论文于2024年2月1日提交（arXiv:2402.03216），HuggingFace模型于2024年2月5日发布，BAAI于2024年1月30日通过X（Twitter）宣布该模型；该模型由北京智源人工智能研究院（BAAI）开发，以MIT许可证发布。",
+   "attr": "assistant",
+   "created": "2026-07-08T11:37:48.136737+00:00"
+  },
+  {
+   "id": "68baa6f7-dd1b-4e00-9e12-262ea3c8c49a",
+   "text": "FastGPT 的技术栈包括TypeScript、Next.js前端、MongoDB或PostgreSQL数据库、可插拔向量数据库、基于Docker Compose的容器化部署，并采用FastGPT开源许可证，允许商业后端使用但禁止提供SaaS服务。",
+   "attr": "assistant",
+   "created": "2026-07-09T02:44:07.496776+00:00"
+  },
+  {
+   "id": "f334b3d6-04a0-4e49-bfbc-b352b9b3f689",
+   "text": "FastGPT 的核心优势包括开箱即用、零代码可视化工作流编排、开源透明和无缝集成——使其成为企业级知识型AI应用开发的领先开源解决方案。",
+   "attr": "assistant",
+   "created": "2026-07-09T02:44:07.496856+00:00"
+  },
+  {
+   "id": "26d01b0c-5ec0-4762-b897-0c05fe6a444e",
+   "text": "根据Tooliverse.ai的评估，截至2026年4月，Mastra在GitHub上拥有25,100+星标；它由Gatsby团队创建，已获得Spark Capital和Y Combinator的3500万美元融资，并曾在Hacker News上经历快速增长——从1,500星标增长到7,500星标。",
+   "attr": "assistant",
+   "created": "2026-07-17T07:42:34.058412+00:00"
+  },
+  {
+   "id": "dc67304e-ff41-4c77-80d0-20a61e7fbaf9",
+   "text": "Mastra是一个TypeScript/JavaScript AI Agent框架，具有观察记忆系统，带有红绿灯优先级标签（🔴🟡🟢），提示缓存可将token成本降低4–10倍，并支持PostgreSQL/MongoDB存储；它完全开源，采用Apache-2.0许可证，在LongMemEval上排名第3（94.87%）。",
+   "attr": "assistant",
+   "created": "2026-07-17T07:44:16.296051+00:00"
+  },
+  {
+   "id": "ab64815b-038a-4ed0-b8d0-49c23a86c5a2",
+   "text": "Langfuse于2026年6月22日发布了一篇题为“Code Evaluators Execution Model”的博客文章，作者为Tobias Wochinger，解释了在多租户环境中执行用户提交的Python和TypeScript评估代码的安全运行时架构。",
+   "attr": "user",
+   "created": "2026-07-18T14:18:44.283255+00:00"
+  },
+  {
+   "id": "d6c6316c-bba1-4425-801e-4cac548e9777",
+   "text": "Langfuse推出了Code Evaluators，用轻量、可靠的基于代码的评分取代昂贵且不稳定的LLM-as-a-Judge，用于确定性检查（例如JSON有效性、必填字段是否存在、答案精确匹配）。",
+   "attr": "user",
+   "created": "2026-07-18T14:18:44.283326+00:00"
+  },
+  {
+   "id": "5c0185aa-2d6e-45e0-8558-23ef73d1c2dd",
+   "text": "LangGraph 于 2024 年 2 月与 LangGraph 正式发布同步，正式发布了三种生产就绪的 Plan-and-Execute 智能体架构——Plan-and-Execute（基础版）、ReWOO 和 LLMCompiler——标志着其从学术概念转向工业框架标准。",
+   "attr": "assistant",
+   "created": "2026-07-19T07:07:12.532106+00:00"
+  },
+  {
+   "id": "bb7a6ccd-7f05-4cf0-abb7-ccef3fb98927",
+   "text": "Mem0于2026年7月13日发布了TypeScript SDK v3.1.0，这是迄今为止最大规模的提供商扩展，新增了对17个向量存储（包括Pinecone、Weaviate、Milvus、Chroma、MongoDB、Elasticsearch）、5个LLM提供商（AWS Bedrock、xAI Grok、Together、vLLM、Sarvam）和4个嵌入提供商（Vertex AI、HuggingFace、FastEmbed、Together）的支持，另加4个重排序器（Cohere、ZeroEntropy等）以及零依赖的懒加载。",
+   "attr": "assistant",
+   "created": "2026-07-27T09:44:07.028260+00:00"
+  },
+  {
+   "id": "afbebc51-0701-4693-bd8e-6221e004a11f",
+   "text": "Mem0 于 2026 年 5 月 8 日推出了记忆衰减功能——一项可选功能，可提高近期访问记忆的相关性分数，以改善搜索排名并形成强化循环。",
+   "attr": "assistant",
+   "created": "2026-07-27T10:11:27.694290+00:00"
+  },
+  {
+   "id": "2c363951-6487-4bcb-8774-d4e8051cd3f4",
+   "text": "Mem0 于 2026 年 4 月 14 日发布了新的核心记忆算法，实现了显著的性能提升（例如 LoCoMo 基准从 71.4 提高到 91.6），减少了检索令牌的使用，并引入了内置图记忆——消除了外部图存储依赖，并在内部处理实体提取、嵌入和链接。",
+   "attr": "assistant",
+   "created": "2026-07-27T10:11:27.694306+00:00"
+  },
+  {
+   "id": "13bf085d-1451-4bfc-9037-4e2a0e722afc",
+   "text": "Firecracker二进制文件可通过下载官方发布版本（例如 firecracker-${latest}-${ARCH}.tgz）或通过在克隆的仓库中使用'tools/devtool build'从源码构建获得。",
+   "attr": "assistant",
+   "created": "2026-07-28T08:52:42.595795+00:00"
+  },
+  {
+   "id": "5090df13-d58a-476f-8b66-4142b9e924e0",
+   "text": "Langfuse是一个开源LLM工程平台，提供LLM可观测性、指标跟踪、评估和提示词管理。",
+   "attr": "assistant",
+   "created": "2026-08-02T10:43:17.146579+00:00"
+  },
+  {
+   "id": "0afa6db1-5fc0-4d1e-8004-4b594ae03a50",
+   "text": "2026年7月，科大讯飞发布“灵犀AgentOS”——一个企业级AI工作台，支持多智能体工作流的无代码编排，集成十多个主流大语言模型，并嵌入文档处理和数据分析的AI能力。",
+   "attr": "assistant",
+   "created": "2026-07-28T04:20:19.632609+00:00"
+  },
+  {
+   "id": "1ff8b796-ac25-4330-86b9-b0b4582a4791",
+   "text": "截至2026年7月，阿里巴巴已开源Qwen3-Reranker系列——基于Qwen3构建的文本交叉编码器重排序模型家族，提供三种规模：Qwen3-Reranker-0.6B（595M参数，可边缘部署）、Qwen3-Reranker-4B（40亿参数，企业生产环境性价比最优）和Qwen3-Reranker-8B（80亿参数，关键应用最高精度），均采用Apache 2.0许可证。",
+   "attr": "assistant",
+   "created": "2026-07-08T11:27:02.790186+00:00"
+  },
+  {
+   "id": "2efdc189-793c-4124-a8e3-847e41b364d7",
+   "text": "根据2026年6月2日发布的DeepSeek API官方公告，DeepSeek V4模型要求前缀长度至少为64个token才符合缓存条件——短于64个token的内容不会被缓存。",
+   "attr": "assistant",
+   "created": "2026-06-24T03:53:14.901278+00:00"
+  },
+  {
+   "id": "2fb983a0-884e-492f-bf91-303d7d13a7de",
+   "text": "2026年7月下旬，谷歌DeepMind CEO戴密斯·哈萨比斯提议建立一个类似FINRA的前沿AI独立监管机构，要求公司在公开发布前至少30天提交模型进行危险能力测试。",
+   "attr": "assistant",
+   "created": "2026-07-28T04:22:06.820953+00:00"
+  },
+  {
+   "id": "5feed5b7-83a6-4ca0-a619-9d345010e64d",
+   "text": "助手对比了六款Agent应用可观测性工具：Langfuse（开源、MIT协议、框架无关）、LangSmith（商业版、LangChain原生）、Arize Phoenix（开源、Apache 2.0协议、OTel原生、专注RAG）、Braintrust（商业版、集成CI/CD）、Helicone（开源、零代码部署）以及Datadog LLM（企业级、统一AI与基础设施监控）。",
+   "attr": "assistant",
+   "created": "2026-06-01T03:34:11.407415+00:00"
+  },
+  {
+   "id": "617cf298-30ba-475d-912a-eda267801ea6",
+   "text": "2026年6月25日，BestAIFor.com发布了《2026年最佳AI翻译设备》报告，评估了11款实时AI翻译设备——9款可穿戴耳机和2款手持口袋翻译机，发现价格区间约为23美元至699美元，离线翻译功能罕见，实际延迟远高于宣传水平，且采用中国开源模型的低成本设备正日益增多",
+   "attr": "assistant",
+   "created": "2026-06-25T03:23:07.635884+00:00"
+  },
+  {
+   "id": "8f037010-4203-422b-8909-fff7549219e9",
+   "text": "深圳于2026年推出育儿补贴续领功能：2025年已领取补贴且仍符合条件的家庭，若信息未变更可一键续领，仅需更新有变动的字段。",
+   "attr": "assistant",
+   "created": "2026-07-02T04:21:52.068907+00:00"
+  },
+  {
+   "id": "974946e7-774f-44fd-a08d-5c22d9a1feb9",
+   "text": "截至2026年7月，LongMemEval前三名系统为：1）OMEGA（95.4%），完全开源，采用Apache-2.0许可证，GitHub仓库位于https://github.com/omega-memory/omega-memory，本地优先架构，支持MCP服务器；2）ByteRover（92.8%），闭源商业产品，无公开GitHub仓库，面向AI编程代理设计，提供CLI工具“brv”和云同步选项；3）Mastra（94.87%），完全开源，采用Apache-2.0许可证，使用TypeScript/JavaScript构建，具备带红黄绿优先级标签（🔴🟡🟢）的观察记忆系统、可将token成本降低4–10倍的提示缓存，以及与PostgreSQL/MongoDB和Vercel AI SDK的集成。",
+   "attr": "assistant",
+   "created": "2026-07-17T07:40:21.962059+00:00"
+  },
+  {
+   "id": "ad02c72d-465c-49ac-aace-684410e6047b",
+   "text": "2026年6月24日，用户请求获取“今日AI新闻”，触发搜索并得出两条主要新闻：AIT公司推出了AI劳动力解决方案——一项商业自动化服务，使企业能够将重复性任务（如客户咨询、潜客获取、预约请求）委托给“AI员工”；以及斯坦福大学计算机科学和AI专业的毕业生在毕业典礼上对AI表达了乐观、探索的态度，这与校方高层对过度关注该话题的担忧形成对比。",
+   "attr": "user",
+   "created": "2026-06-24T10:21:31.805550+00:00"
+  }
+ ],
+ "L1_query_record": [
+  {
+   "id": "d2792d59-36be-4f10-96ad-ccd5171c97d6",
+   "text": "用户询问了与Langfuse相关的Agent技能信息，并特别请求协助查找这些技能。",
+   "attr": "user",
+   "created": "2026-06-25T03:25:00.997555+00:00"
+  },
+  {
+   "id": "33d347a4-d274-414e-8dd1-5f249cc90dce",
+   "text": "用户于2026年6月6日查询了湖北省潜江市的幼儿园假期安排，希望了解官方或当地适用的寒暑假具体日期。",
+   "attr": "user",
+   "created": "2026-06-06T09:09:23.838015+00:00"
+  },
+  {
+   "id": "d2dbb920-fc64-4082-b895-bec339d134e1",
+   "text": "用户询问了'AI Hot'的含义，该术语在上下文中可能指人工智能领域的热点话题（如大语言模型、AI代理、多模态AI、AI编程工具）、特定产品或项目名称，或技术术语（如AI热图、AI热启动）",
+   "attr": "user",
+   "created": "2026-05-29T13:25:00.345460+00:00"
+  },
+  {
+   "id": "bfaba685-e25f-46e5-9541-936dc7067a48",
+   "text": "用户询问了仙台的柚子相关产品，由此获得了关于仙台柚子相关商品的详细概述，包括柚子皮蜜饯、当地餐厅和居酒屋提供的柚子酸鸡尾酒、柚饼（一种以柚子命名但主要包含核桃或芝麻的传统仙台点心）、柚饼品牌\"Mikasa no Yubeshi\"（10块装约1,836日元）、Botenmaru核桃柚饼奶油曲奇（有单块装、5块装594日元和10块装1,188日元可选），并澄清日本柚子与中国柚子不同——体积小（约110克）、味酸，主要用作调味的果皮和果汁，最大产区是高知县而非宫城县。",
+   "attr": "user",
+   "created": "2026-07-22T14:53:42.640148+00:00"
+  },
+  {
+   "id": "ba53e7b0-91de-437a-8403-8da7c14a94ea",
+   "text": "用户询问了“Current Compensation”的含义，并得知它指的是其总体经济报酬——包括基本工资、奖金、股票/RSU和现金津贴——不仅仅是每月实发工资。",
+   "attr": "user",
+   "created": "2026-07-30T08:21:56.907415+00:00"
+  },
+  {
+   "id": "efd3b5da-a11c-4d79-b5f9-c3dc01cdaedf",
+   "text": "用户询问了关于网页设计相关的skill推荐",
+   "attr": "user",
+   "created": "2026-08-06T07:52:44.479761+00:00"
+  },
+  {
+   "id": "f5dd4dcd-7404-41f5-b007-46042e14c3e7",
+   "text": "用户询问了Modular RAG（模块化RAG）的概念，了解到它是将传统RAG的\"检索-生成\"两段式固定流程拆解为可自由组合、可编排的独立模块（索引、预检索、检索、后检索、生成），使系统更灵活、可插拔、易调优",
+   "attr": "user",
+   "created": "2026-08-06T07:53:11.655341+00:00"
+  },
+  {
+   "id": "a9a9951e-2d4c-4ba1-afba-67f66ecb3281",
+   "text": "用户询问了日本山形县的位置，被告知山形县位于日本本州岛东北部（东北地方），日本海沿岸；东邻宫城县和福岛县，西临日本海，南接福岛县和新潟县，北连秋田县，首府为山形市",
+   "attr": "assistant",
+   "created": "2026-08-06T08:13:19.391435+00:00"
+  },
+  {
+   "id": "6ce3cdc2-3cc4-455b-a26b-fe5f0b950bbe",
+   "text": "用户请求了一份面试版的Prompt Injection攻击原理及防御的结构化回答框架",
+   "attr": "user",
+   "created": "2026-08-06T08:11:54.114843+00:00"
+  },
+  {
+   "id": "0499aa73-aef7-49b9-81b3-de0e54078892",
+   "text": "用户询问了'尝试coerce参数类型'的含义，获得了解答：指在调用函数、接口或数据库查询之前，主动把参数的数据类型转换成目标类型的操作，如函数期望接收int但传入string '42'时先int('42')强制转换。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:14:05.574025+00:00"
+  },
+  {
+   "id": "0fd3f92b-2e02-46f8-a46d-1f923edf4ae1",
+   "text": "用户询问了RBAC/ABAC式的工具权限分级，获得了解答：RBAC（基于角色的访问控制）把权限绑定在角色上，用户通过被分配某个角色来获得相应权限，运作流程为用户→被分配→角色→拥有→权限。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:14:05.631277+00:00"
+  },
+  {
+   "id": "426666ab-3592-4bf1-8871-a0518025232d",
+   "text": "用户询问了Prompt Injection攻击原理及防御的面试版内容，获得了解答：Prompt Injection是AI系统（尤其是LLM Agent）中最严重的安全威胁之一，攻击者通过在输入中添加恶意指令覆盖或劫持系统预设指令，核心本质是LLM无法可靠区分'数据'和'指令'。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:14:05.748219+00:00"
+  },
+  {
+   "id": "f7741bed-fbb7-4420-91e7-a40c2db32b2e",
+   "text": "用户询问了数据库索引查询的原理，了解到索引的本质是利用空间换时间，通过预先建立有序数据结构避免全表扫描，将查询复杂度从O(N)降低",
+   "attr": "user",
+   "created": "2026-08-06T08:15:05.469250+00:00"
+  },
+  {
+   "id": "64ae0c15-4f7b-41f6-be2b-e66cdeff1258",
+   "text": "用户询问了HSBC总部位置，了解到汇丰控股总部位于英国伦敦金丝雀码头加拿大大道8号，1993年从香港迁至伦敦，香港仍是重要运营中心",
+   "attr": "user",
+   "created": "2026-08-06T08:15:05.728924+00:00"
+  },
+  {
+   "id": "34f370fe-f65b-4b49-afdc-91589d70327a",
+   "text": "用户询问了犬儒主义的含义，了解到其两个层面：古典义指古希腊犬儒学派（代表人物安提斯泰尼、第欧根尼），崇尚自然简朴生活、轻视世俗之物、拒斥社会习俗；近现代义则演变为清心寡欲、愤世嫉俗的色彩",
+   "attr": "user",
+   "created": "2026-08-06T08:15:05.879250+00:00"
+  },
+  {
+   "id": "da9e3ffa-c73e-4770-9588-25d59d248e65",
+   "text": "用户询问了深圳中洲湾迎海二期（上沙）的交房时间，该项目备案名为中洲滨海华府三期，合同约定交付时间为2026年9月，已获福田区住房和建设局在2026年6月18日'保交楼工作推进会'上官方确认",
+   "attr": "assistant",
+   "created": "2026-08-06T08:23:21.794038+00:00"
+  },
+  {
+   "id": "939551ab-4680-4bcc-9885-2299a7274a4d",
+   "text": "用户询问了清晖园的门票价格：普通票15元/人，团体票12元/人，优惠票7元/人（学生、60岁以上长者等），身高1.2米以下儿童及70周岁及以上老人免费；清晖园位于广东省佛山市顺德区大良街道清晖路23号，开放时间每日9:00–17:30",
+   "attr": "assistant",
+   "created": "2026-08-06T08:23:21.887234+00:00"
+  },
+  {
+   "id": "f969a70e-d0f0-4a12-8f25-77dad0155b83",
+   "text": "用户询问了LongMemEval、LoCoMo、BEAM三大基准测试的排名前三；截至2026年7月，LongMemEval前三为M-1（96.4%）、ByteRover v2.1.5（92.2%）、Hindsight（89.6%）；BEAM中M-1在所有档位（1M/5M/10M）均排名第一，Hindsight居第二；LoCoMo中M-1综合领先，排名因评判模型依赖性和指标异质性高度不稳定",
+   "attr": "assistant",
+   "created": "2026-08-06T08:23:22.677628+00:00"
+  },
+  {
+   "id": "1b3c3e1e-f946-4ba2-a90f-90c47e68637c",
+   "text": "用户询问了Agent开发岗位的校招生薪资情况，Assistant提供了2024-2025年市场参考：Top AI/大厂核心硕士年包40w-60w+，一线大厂/独角兽（含Shopee）硕士年包30w-45w，并建议关注Offershow、牛客网、脉脉获取最新数据",
+   "attr": "user",
+   "created": "2026-08-06T08:23:32.615484+00:00"
+  },
+  {
+   "id": "02e5b0fd-746d-409f-9d47-b7a7755ef71e",
+   "text": "用户询问了理想i6的售价，理想i6后驱标准版官方指导价24.98万元，四驱标准版26.98万元（含2万元双电机四驱升级费用）",
+   "attr": "user",
+   "created": "2026-08-06T08:24:14.438613+00:00"
+  },
+  {
+   "id": "bc81c3b4-dd80-4d80-8f6f-05e9c8c124e6",
+   "text": "用户询问了深圳图书馆北馆的地址，被告知位于深圳市龙华区腾龙路30号，紧邻深圳美术馆（新馆），可乘地铁4号线至红山站A1出口步行到达",
+   "attr": "user",
+   "created": "2026-08-06T08:24:14.658080+00:00"
+  },
+  {
+   "id": "aecec01b-2707-470d-a63e-5f2e712f568c",
+   "text": "用户询问了MarkItDown对PDF解析时底层使用的库",
+   "attr": "user",
+   "created": "2026-08-06T08:25:34.318753+00:00"
+  },
+  {
+   "id": "c2eebf9d-7645-4473-88ff-532e78510891",
+   "text": "用户查询了汇丰银行研发职级体系，了解到采用GCB（Global Career Band）体系：GCB6为初级工程师/校招入门，GCB5为中级工程师，GCB4为高级工程师（Senior），GCB3为资深/首席级工程师",
+   "attr": "assistant",
+   "created": "2026-08-06T08:32:34.154519+00:00"
+  },
+  {
+   "id": "15c96813-6276-4967-bc74-026d9b07845a",
+   "text": "用户在2026年8月6日询问了名为“qwen3.7-text-embedding”的模型，但该名称不存在，可能是将Qwen3与其他数字（如参数量7B或API版本v4）混淆",
+   "attr": "user",
+   "created": "2026-08-06T08:33:22.667037+00:00"
+  },
+  {
+   "id": "7badc769-db5b-4723-bcbe-97ef1fdf1c0a",
+   "text": "用户询问了最新版MCP（Model Context Protocol）的更新内容",
+   "attr": "user",
+   "created": "2026-08-06T08:33:54.913953+00:00"
+  },
+  {
+   "id": "5ddd31c2-ba41-47e2-a0bc-f4d0c17e4699",
+   "text": "用户询问了汇丰银行研发/科技岗位的职级体系和对应薪资，汇丰采用GCB（Global Career Band）职级体系，包括GCB6（初级工程师/校招入门）、GCB5（中级工程师）、GCB4（高级工程师）、GCB3（资深/首席级工程师）",
+   "attr": "user",
+   "created": "2026-08-06T08:33:55.632767+00:00"
+  },
+  {
+   "id": "c1448c0f-f6c6-44e2-91c0-3524140be099",
+   "text": "用户询问了LLM参数response_format={\"type\": \"json_object\"}的支持情况，该参数并非所有模型都支持，是OpenAI的原生特性（JSON Mode），支持gpt-3.5-turbo等模型",
+   "attr": "user",
+   "created": "2026-08-06T08:33:55.677363+00:00"
+  },
+  {
+   "id": "77654202-fe6d-4e71-bb2a-e03755dbdf9d",
+   "text": "用户询问了中俄免签问题，助手告知截至2026年8月中俄尚未实现全面互免签证，目前主要有团队旅游免签（5人及以上，最长15天）、俄罗斯对华电子签证（停留不超过16天）、以及外交/公务护照和APEC商务旅行卡等特定人群免签安排",
+   "attr": "assistant",
+   "created": "2026-08-06T08:42:11.381807+00:00"
+  },
+  {
+   "id": "3061a198-63c2-4b41-90d8-ce9862838847",
+   "text": "用户询问了字节跳动研发岗位的技术面试次数：社招通常3-4轮技术面（可能含跨部门交叉面试），校招通常2-3轮业务/技术面试，所有技术面后有一轮HR面",
+   "attr": "user",
+   "created": "2026-08-06T08:43:01.776596+00:00"
+  },
+  {
+   "id": "dea8432e-2e35-48c3-a53b-8b54b5f46207",
+   "text": "用户询问了平安银行总行技术岗面试轮数：通常2-4轮，常规流程2-3轮（一面AI面试或基础技术面，二面专业技术深挖），竞争激烈岗位可能3-4轮（含群面、HR面、经理/高管终面）",
+   "attr": "user",
+   "created": "2026-08-06T08:43:01.897760+00:00"
+  },
+  {
+   "id": "30abeb5c-e9c2-4509-8321-058321f8c440",
+   "text": "用户询问了电视剧《欢迎回我的频道》的拍摄日期，得知该剧2021年12月开机、2022年3月杀青，全程在北京拍摄（取景地包括国贸、北京地铁站、望京SOHO、三里屯、蓝色港湾、大望桥、木棉花酒店等），制作方为和力辰光",
+   "attr": "assistant",
+   "created": "2026-08-06T08:48:42.175249+00:00"
+  },
+  {
+   "id": "791d3286-8680-43ee-8bc0-07573b08dfa0",
+   "text": "用户询问了深圳看书的好去处，获得了图书馆类推荐（深圳图书馆福田区中心书城旁、深圳少年儿童图书馆罗湖区、各行政区图书馆）和书店类推荐（深圳书城·中心城福田、诚品生活宝安壹方城、覔书店多家分店）",
+   "attr": "assistant",
+   "created": "2026-08-06T08:48:42.448651+00:00"
+  },
+  {
+   "id": "f7c873d1-e693-4dbd-b060-f1f8e4362367",
+   "text": "用户询问了 agent-browser.dev 的快速入门指南，这是一个专为 AI Agent 集成而设计的浏览器自动化工具。",
+   "attr": "",
+   "created": "2026-08-06T08:49:19.050278+00:00"
+  },
+  {
+   "id": "afaa491e-f540-4ead-b0f7-6fa0152f3787",
+   "text": "用户询问了agent-browser的快速入门页面，助手介绍agent-browser是Vercel Labs推出的开源浏览器自动化CLI工具，专门用于让AI Agent能够像人一样控制网页浏览器、与网页交互",
+   "attr": "assistant",
+   "created": "2026-08-06T08:57:30.266398+00:00"
+  },
+  {
+   "id": "80a2c979-a9e6-485d-9508-a33b06e13f00",
+   "text": "用户询问了web-design-guidelines技能，助手解释该技能由Vercel Labs开发，用于根据Vercel的Web界面指南对UI代码进行设计和无障碍合规性审查，属于Design & UI类别，安装量超过50万次，可搭配frontend-design、vercel-composition-patterns等同系列技能使用",
+   "attr": "assistant",
+   "created": "2026-08-06T08:57:30.345642+00:00"
+  },
+  {
+   "id": "7e92143e-3577-4fc4-b5b6-c1d565704ef1",
+   "text": "用户询问了MCP、Function Calling和A2A三者的区别，获得了分层对比说明：Function Calling是模型能力层（LLM↔Function），MCP是工具/数据集成层（Agent↔外部资源），A2A是多智能体协作层（Agent↔Agent），三者互补而非竞争",
+   "attr": "user",
+   "created": "2026-08-06T08:57:37.996846+00:00"
+  },
+  {
+   "id": "acb13b57-7f0e-4d34-9973-48f6c8da180d",
+   "text": "用户询问了Plan-and-Execute执行模式是否有相应的学术论文，表明其正在为面试或研究寻找学术引用来源。",
+   "attr": "user",
+   "created": "2026-08-06T08:57:48.647031+00:00"
+  },
+  {
+   "id": "fd9f7a05-9927-4fc1-8b87-823090a1c751",
+   "text": "用户请求了一个单文件HTML页面示例，用于展示架构图/流程图JSON配置与面试卡片",
+   "attr": "user",
+   "created": "2026-08-06T08:57:57.608189+00:00"
+  },
+  {
+   "id": "870f23bb-e9bf-4174-b524-046348bf369a",
+   "text": "用户询问了RAPTOR和Self-RAG两篇论文的核心内容，了解到RAPTOR通过递归抽象处理与树状组织检索解决传统RAG缺乏全局视野和跨文档综合能力的问题，而Self-RAG通过反思标记（Reflection Tokens）和批评家模型微调实现按需检索和自我评估能力",
+   "attr": "user",
+   "created": "2026-08-06T08:58:19.055681+00:00"
+  },
+  {
+   "id": "d23a0201-3192-494b-a02a-c68bb0a5d044",
+   "text": "用户询问了 Chrome DevTools Protocol (CDP) 中 Accessibility.getFullAXTree 方法是否会返回 div、span 等 HTML 标签名。助理说明该方法默认不会以 HTML 标签名形式返回，而是返回对应的无障碍角色（Role）；无语义的纯容器 div/span 通常会被标记为 Ignored 或根本不单独成节点；若需获取原始 DOM 标签名，应使用 DOM.getDocument + DOM.describeNode 等 DOM 域方法。",
+   "attr": "user",
+   "created": "2026-08-07T01:48:28.925972+00:00"
+  },
+  {
+   "id": "360a224a-eaf5-4da0-bce2-891e635a9832",
+   "text": "用户询问了浏览器控制台中 chrome.app 和 chrome.runtime 的返回内容，助理说明返回值取决于当前页面上下文（普通网页还是扩展程序页面）以及浏览器版本",
+   "attr": "user",
+   "created": "2026-08-07T09:00:01.724354+00:00"
+  },
+  {
+   "id": "9d8367b3-4611-462d-8caf-3d60b0d70f5e",
+   "text": "用户询问了 Camoufox (https://camoufox.com/) 的特点，助手介绍 Camoufox 是一款专为 AI Agent 设计的开源反检测浏览器，基于 Firefox 构建，移除了遥测、后台服务和多余 UI 组件，运行内存仅约 200MB，远低于 Chrome 的 800MB+，专为大规模并行运行多个 AI Agent 而优化。",
+   "attr": "assistant",
+   "created": "2026-08-07T09:17:33.634859+00:00"
+  },
+  {
+   "id": "4a9d7f08-5909-42f7-bbb4-aa649b0d4fc7",
+   "text": "用户请求了获取 WebGL 渲染器信息的 JavaScript 脚本，助手提供了使用 WEBGL_debug_renderer_info 扩展获取 UNMASKED_VENDOR_WEBGL 和 UNMASKED_RENDERER_WEBGL 的标准代码",
+   "attr": "assistant",
+   "created": "2026-08-07T09:23:47.473045+00:00"
+  },
+  {
+   "id": "2396c23a-dad1-44f2-8539-a7bc7f5078ef",
+   "text": "用户询问了 spaCy 的中文小型语言模型 zh_core_web_sm 是什么，该模型包含分词、词性标注、依存句法分析、命名实体识别等基础 NLP 组件，基于网络文本语料训练，是该系列中体积最小、推理速度最快的版本",
+   "attr": "assistant",
+   "created": "2026-08-07T15:07:04.685690+00:00"
+  },
+  {
+   "id": "e6914dc0-eca8-46ea-8750-ed76da459090",
+   "text": "用户询问了 WebGL 渲染器中每台 GPU 的渲染结果是否存在微小差异，被告知是的，差异源于浮点运算非确定性、不同架构 ALU 实现精度/舍入模式差异等，这是 Canvas/WebGL 指纹能作为唯一标识符的物理基础",
+   "attr": "assistant",
+   "created": "2026-08-07T15:08:07.423151+00:00"
+  },
+  {
+   "id": "afe1426c-e750-4858-8b3c-3d6d273211dd",
+   "text": "用户查询了 GitHub 仓库 f/prompts.chat（原名 Awesome ChatGPT Prompts），助手介绍其为全球最大的开源 AI Prompt 库，拥有 143k+ Stars，采用 CC0 1.0 许可证，支持 Next.js 自托管及多种集成方式",
+   "attr": "assistant",
+   "created": "2026-09-03T01:22:34.443878+00:00"
+  },
+  {
+   "id": "c7bd3a24-774d-415c-a788-e9080369743e",
+   "text": "用户查询了 GitHub 仓库 openai/codex，助手确认其为 OpenAI Codex CLI（本地终端编程 Agent）的官方开源源码仓库，而非已停用的代码补全模型。该仓库采用 Apache-2.0 许可证，核心引擎使用 Rust 编写，CLI 入口基于 Node.js，并提供 Python 和 TypeScript SDK。",
+   "attr": "",
+   "created": "2026-09-03T01:44:07.114420+00:00"
+  },
+  {
+   "id": "efb588f9-81c6-428e-bb4c-730f49b5663d",
+   "text": "用户询问了读写分离的原因并要求举例说明",
+   "attr": "user",
+   "created": "2026-08-07T17:38:38.162102+00:00"
+  },
+  {
+   "id": "43eff4d8-6ac6-461e-b265-41471bb48138",
+   "text": "用户询问了为什么在 LLM 调用中要求输出 JSON 格式时，response_format 比 function_call 更省 token",
+   "attr": "user",
+   "created": "2026-08-08T00:46:35.209268+00:00"
+  },
+  {
+   "id": "1901a3ab-3f71-402c-af44-e6bfe9520e75",
+   "text": "用户询问了'春夏秋冬'的含义，被告知指地球上的四个季节（春季、夏季、秋季、冬季），由地球绕太阳公转时地轴倾斜导致不同地区接收太阳辐射量变化而形成，北半球分别为3-5月、6-8月、9-11月、12月至次年2月，在中文语境中也常用来代指一年的时光或岁月的流逝",
+   "attr": "",
+   "created": "2026-08-08T03:18:23.117336+00:00"
+  },
+  {
+   "id": "b7a68f74-eec8-4fbf-a6e3-8a0d36e282e5",
+   "text": "用户询问了SQLite数据库的优缺点",
+   "attr": "user",
+   "created": "2026-08-08T03:47:16.809025+00:00"
+  },
+  {
+   "id": "3916276d-93de-40a9-b33e-91f82a4d7b0c",
+   "text": "用户向助手询问了一道图形推理题的答案，该题为3x3网格形式，需要找出问号处应填的图形",
+   "attr": "user",
+   "created": "2026-08-08T06:02:43.989166+00:00"
+  },
+  {
+   "id": "22295e51-d062-4c3a-8593-b1bd1e53bc8d",
+   "text": "用户向助手询问了一道位置移动类图形推理题的答案，题目包含4个已知图形和若干选项，每个图形都有3个黑点",
+   "attr": "user",
+   "created": "2026-08-08T06:13:31.357667+00:00"
+  },
+  {
+   "id": "fe201fec-e6ab-4e06-9fd6-b53d60be4530",
+   "text": "用户向助手询问了一道空间重构（折纸盒）类图形推理题的答案，题目给出一个展开图，包含6个面：圆圈面、田字格面（右下角灰色）、三角形面、五角星面、交叉线面、另一个田字格面",
+   "attr": "user",
+   "created": "2026-08-08T06:16:45.644670+00:00"
+  },
+  {
+   "id": "016e65ce-5f01-4d02-b566-3da99ec21ad5",
+   "text": "用户向助手询问了一道图形分类题的答案，题目包含6个图形（树、品字、奔驰标、四圆、三叶风扇、字母B），需要将它们分为两类",
+   "attr": "user",
+   "created": "2026-08-08T06:17:13.619871+00:00"
+  },
+  {
+   "id": "0906d319-8ef8-4118-99bc-a80046778070",
+   "text": "用户询问了APScheduler中misfire_grace_time参数的含义，表明正在深入学习APScheduler的任务调度机制",
+   "attr": "user",
+   "created": "2026-08-08T07:37:46.138702+00:00"
+  },
+  {
+   "id": "bbbc22d1-b4d0-42fe-b6c9-78db8691bbae",
+   "text": "用户于2026年8月10日查询了深圳市福田区幼儿园的开学时间",
+   "attr": "user",
+   "created": "2026-08-10T14:38:04.830604+00:00"
+  },
+  {
+   "id": "53ba46bd-5778-4070-a8e5-a90423894f06",
+   "text": "用户搜索了GitHub上与GEO（Generative Engine Optimization）关键词相关的agent项目，助手推荐了6个项目：geo-agent (sylvaintillon)、AutoGEO、Ansvisor、GetCito、generative-engine-optimization-tools (Awesome List)、AI Visibility Monitor (avm)",
+   "attr": "assistant",
+   "created": "2026-08-11T06:37:29.176736+00:00"
+  },
+  {
+   "id": "a27c1901-1000-42f8-bfa5-35e25521d76f",
+   "text": "用户询问了英语单词 'profound' 的含义，助手介绍了其读音 /prəˈfaʊnd/、核心含义（深刻的、深远的、深奥的）、三种主要用法（深刻的情感/影响、深奥的智慧/思想、完全/彻底的程度）、词源（拉丁语 profundus，pro- + fundus，意为'深入到深处'）、常见搭配（profound influence/impact、profound knowledge、profound respect）、近义词（deep、deep-seated、intense、thoughtful），以及副词形式 profoundly",
+   "attr": "assistant",
+   "created": "2026-08-11T09:15:26.464527+00:00"
+  },
+  {
+   "id": "c859dbba-fe3a-4ade-8ace-6ef55db0e4ea",
+   "text": "用户询问了一个平台的身份，助理确认该平台为Profound（官网tryprofound.com），截图显示的是其官方文档站docs.tryprofound.com",
+   "attr": "user",
+   "created": "2026-08-11T09:43:18.009573+00:00"
+  },
+  {
+   "id": "3cbd8258-fa37-45ee-b73d-8bbae7b908bb",
+   "text": "用户询问了同比和环比的概念，助手解释了同比（Year-on-Year）是与上年同期相比，用于消除季节性因素、反映长期增长趋势；环比（Month-on-Month/Quarter-on-Quarter）是与上一个相邻周期相比，用于反映短期变化趋势、监测近期波动",
+   "attr": "assistant",
+   "created": "2026-08-12T12:31:16.049031+00:00"
+  },
+  {
+   "id": "883468e0-9c4d-4a63-aa34-0883bd60e345",
+   "text": "用户之前关注 Shopee GEO 优化以及 Reddit/Quora 对比，并询问了是否可以在第三方平台发帖、通过 API 发帖时账号应使用什么身份、是否可以通过 Reddit API 发帖等问题",
+   "attr": "user",
+   "created": "2026-08-14T10:05:21.281016+00:00"
+  },
+  {
+   "id": "53848d12-0860-4e07-a25a-5dac46ddadd3",
+   "text": "用户询问了“沙箱隔离”的具体含义，助手解释了沙箱隔离是为AI Agent提供安全、受限且相互独立的代码执行环境，防止恶意/错误代码破坏系统、限制资源配额、保障数据安全与权限收敛",
+   "attr": "assistant",
+   "created": "2026-08-19T12:16:54.321852+00:00"
+  },
+  {
+   "id": "00d244a0-a98f-41b6-af35-33ab956af745",
+   "text": "用户询问了Sentinel Dashboard是什么，助手解释其为阿里巴巴开源的流量治理组件Sentinel配套的轻量级控制台，用于微服务实时监控、规则管理和熔断降级配置",
+   "attr": "assistant",
+   "created": "2026-08-19T13:42:51.600381+00:00"
+  },
+  {
+   "id": "6ffdde70-7e5a-4a08-801c-03e697381b1f",
+   "text": "用户询问了Kotlin编程语言的特点，了解到Kotlin是由JetBrains开发的静态类型跨平台编程语言，运行于JVM之上，具有空安全、简洁性、协程支持和多平台（KMP）等核心优势",
+   "attr": "user",
+   "created": "2026-08-19T13:44:42.381391+00:00"
+  },
+  {
+   "id": "acd216f9-7313-42b3-b410-edcfb80edda4",
+   "text": "用户询问了Kotlin/Spring Boot的含义，了解到它并非独立技术产品，而是指使用Kotlin语言开发Spring Boot应用程序的技术组合，是JVM生态中主流的后端开发范式",
+   "attr": "user",
+   "created": "2026-08-20T02:27:25.533330+00:00"
+  },
+  {
+   "id": "a4788d8b-5cc1-4e3f-871d-da9c28ba9ff5",
+   "text": "用户询问了Elasticsearch vs 专用向量库的选择，了解到在电商搜索场景（如AI Shopping Assistant）下，Elasticsearch是混合检索的最优解，因为它原生解决了关键词匹配与语义匹配的融合问题，且避免了引入额外基础设施的运维成本",
+   "attr": "user",
+   "created": "2026-08-20T03:38:46.100105+00:00"
+  },
+  {
+   "id": "16a8c4e4-eda5-4236-8d48-7e8481735de7",
+   "text": "用户询问了 https://momentum.asia/ 是什么网站，助手确认该网站是 Momentum Works，一家专注于亚洲数字经济的研究与咨询机构，提供行业研究报告（涵盖电商、即时零售、餐饮连锁、外卖平台等）、情报订阅（通过Substack发布周报）、战略咨询服务，以及组织定制化考察学习之旅（Immersions），其研究成果常被路透社、彭博社、金融时报等主流财经媒体引用",
+   "attr": "",
+   "created": "2026-08-20T06:51:34.564519+00:00"
+  },
+  {
+   "id": "06f463d1-d7c6-4f5c-848f-c4c039283a71",
+   "text": "用户于2026年8月20日询问了 https://cube.asia/ 网站的信息，该网站是 Cube Asia，一家专注于亚洲（尤其是东南亚）电商市场数据与洞察的研究机构",
+   "attr": "user",
+   "created": "2026-08-20T06:53:36.721686+00:00"
+  },
+  {
+   "id": "19632c09-5752-4d22-b90f-bdf77ba2b57c",
+   "text": "用户询问了 Reddit 的 karma 是什么，助手解释 karma 是 Reddit 的积分/声誉系统，通过其他用户对自己帖子或评论的 upvote/downvote 来增减，分为 Post Karma 和 Comment Karma 两类",
+   "attr": "assistant",
+   "created": "2026-08-20T08:36:42.964518+00:00"
+  },
+  {
+   "id": "5694e432-0e70-4d7f-8f85-7f16f1c9ce8f",
+   "text": "用户询问了 PostgreSQL 的全称及行存 OLTP 的含义，助手解释 PostgreSQL 本身没有包含 OLTP 的官方全称，'行存 OLTP' 是对其核心定位的描述：默认采用行式存储（Row-Oriented Storage），设计目标支持高并发、低延迟的联机事务处理（Online Transaction Processing）",
+   "attr": "assistant",
+   "created": "2026-08-20T08:36:43.027341+00:00"
+  },
+  {
+   "id": "e0fe3450-837b-4ed2-af09-a26a45d7e9f4",
+   "text": "用户询问了幼儿园入园体检应选择什么项目，助手根据深圳市福田区妇幼保健院的截图建议首选挂'幼儿园体检门诊'，必查项目包括体格检查（身高、体重等）",
+   "attr": "user",
+   "created": "2026-08-21T02:04:40.424992+00:00"
+  },
+  {
+   "id": "f6f71c30-5a32-4c61-a7a8-cfba291adbb9",
+   "text": "用户询问了ToS的全称，助手解释ToS全称为Terms of Service（服务条款），是服务提供商与用户之间就使用服务达成的法律协议，规定用户权利义务、可接受使用行为、知识产权归属、责任限制、终止条件等；在网站数据采集场景中，ToS通常禁止未经授权的自动化抓取和数据转售，是判断采集合规性的核心法律依据；相关术语还包括TOS、ToU（Terms of Use，使用条款）和EULA（End User License Agreement，最终用户许可协议）",
+   "attr": "",
+   "created": "2026-08-21T09:11:12.450768+00:00"
+  },
+  {
+   "id": "aaff8790-6d5d-4456-ab08-12298f213a74",
+   "text": "用户询问了 DeepSeek-V4-Flash-0731-Vision-NVFP4 模型的详细信息，助手确认该模型由第三方 WebBrain 团队构建，非 DeepSeek 官方发布，是一个社区多模态视觉扩展模型",
+   "attr": "assistant",
+   "created": "2026-08-21T09:16:04.012589+00:00"
+  },
+  {
+   "id": "f1a51c8e-6c5b-4f4e-b542-d8469c457946",
+   "text": "用户询问了一张截图中的电视剧，助手根据图片中的标签（'天道'、'王志文'、'丁元英'）、简介文字（提到丁元英的音响100多万）以及画面人物（王志文饰演丁元英、左小青饰演芮小丹）确认该剧为《天道》",
+   "attr": "",
+   "created": "2026-08-21T12:36:57.815847+00:00"
+  },
+  {
+   "id": "5fd957d4-e7ef-497d-a0d2-a5bc0c0d9c9e",
+   "text": "用户询问了会话上下文压缩的具体数据：压缩前4696 tokens，压缩后578 tokens，压缩率约87.7%，压缩比约8.1:1",
+   "attr": "user",
+   "created": "2026-08-22T11:29:08.045276+00:00"
+  },
+  {
+   "id": "e9dfd2cf-13cc-4eeb-af57-f9abd2e8d5b8",
+   "text": "用户询问了如何在FastAPI中启动WebSocket服务，助手提供了完整的技术指导，包括使用@app.websocket()装饰器定义端点、基础示例代码、启动命令（uvicorn）、关键API速查表、依赖注入支持、ConnectionManager多客户端广播模式，以及注意事项（accept()必须调用、异常处理、心跳保活、多worker场景需Redis共享存储）",
+   "attr": "assistant",
+   "created": "2026-08-22T14:58:05.138465+00:00"
+  },
+  {
+   "id": "fc55db7f-044e-4fbf-b77e-33d4398682b2",
+   "text": "用户询问了如何在Nginx中支持WebSocket服务，助手提供了完整配置指南，包括核心三行配置（proxy_http_version 1.1 + Upgrade + Connection \"upgrade\"）、多Worker负载均衡（ip_hash会话保持）、生产环境加固（限制并发连接数、禁用缓冲、SSL/TLS支持wss://）、常见问题排查表及验证命令",
+   "attr": "assistant",
+   "created": "2026-08-22T14:59:25.494328+00:00"
+  },
+  {
+   "id": "8580e547-20cc-42c5-a0a4-8c252d3f6777",
+   "text": "用户询问了Netty的技术栈，了解到Netty是基于Java的高性能异步事件驱动网络应用框架，采用Reactor模式，底层使用Java NIO，支持HTTP/1.1、HTTP/2、WebSocket、TCP/UDP、SSL/TLS等协议，属于Java后端基础设施层的底层网络通信库，Spring WebFlux、Dubbo、gRPC-Java、RocketMQ、Elasticsearch、Spring Cloud Gateway等知名项目均构建于Netty之上",
+   "attr": "user",
+   "created": "2026-08-22T15:07:27.893459+00:00"
+  },
+  {
+   "id": "ba0aca62-5c88-45df-8f91-b0c165d8d039",
+   "text": "用户询问了 Agent Skill 内部的文件夹结构，并得到了针对多种平台（Microsoft Copilot Studio、Azure AI Agent、Semantic Kernel、LangChain/LangGraph、Dify/FastGPT）及通用最佳实践的详细结构说明，包括各目录用途（如 Skills/、Actions/、Triggers/、prompts/）、关键文件（如 SkillManifest.json、schema.json、skprompt.txt、skill.py）及其功能定义",
+   "attr": "user",
+   "created": "2026-06-01T08:11:38.303645+00:00"
+  },
+  {
+   "id": "11083b0e-67a0-4557-bae0-e37fa7187407",
+   "text": "用户询问了'岁月可回首'的含义，该表达字面意为时光可以回头追忆，蕴含怀旧、人生感悟与珍惜过往的情感，常与'且以深情共白头'连用，表达对美好人生经历与长久相伴爱情的期许",
+   "attr": "user",
+   "created": "2026-06-01T15:34:15.759373+00:00"
+  },
+  {
+   "id": "573be362-f632-4d1b-852e-74d3fe550f98",
+   "text": "用户询问了 Langfuse 中 Trace 和 Observation 的区别，并要求举例说明，其中 Trace 指一次完整的用户请求（如 RAG 查询），Observation 指该 Trace 内部的单个操作步骤（如文档检索、上下文构建、LLM 生成、日志记录）",
+   "attr": "user",
+   "created": "2026-06-02T14:17:00.670560+00:00"
+  },
+  {
+   "id": "a3ac832f-c567-456b-aaf1-39939078758d",
+   "text": "用户询问了当前可用的工具类型及具体功能，助理据此说明其具备三类工具：天气相关工具（weather_search_city 和 weather_get_current_weather）、网络搜索与内容提取工具（tavily_web_search、tavily_web_pages_extract、tavily_web_site_crawl）以及安全沙箱代码执行工具（code_execute_code）",
+   "attr": "user",
+   "created": "2026-06-02T15:08:27.685739+00:00"
+  },
+  {
+   "id": "a40e1bcd-f6da-4a61-b3b4-a08353ada9d7",
+   "text": "用户询问了'志气长存'的含义，该表达意为远大的志向与昂扬的气概永远存在、不会磨灭，常用于缅怀逝者、激励后人、纪念活动及书法题字等场景，体现不屈不挠的精神、永恒的激励和积极的人生态度",
+   "attr": "user",
+   "created": "2026-06-01T15:34:51.566833+00:00"
+  },
+  {
+   "id": "0f807f67-1fd5-48e2-b352-5f212171b59f",
+   "text": "用户上传并询问了一个名为 'deploy_20260419_212510_dee242f.txt' 的部署日志文件，该文件记录了 2026年4月19日 21:25:10 对 'chat-agent' 项目的自动化部署，Git 提交 SHA 为 'dee242f'。",
+   "attr": "user",
+   "created": "2026-06-25T15:22:13.820052+00:00"
+  },
+  {
+   "id": "b9ba9334-c7df-414d-95be-e098a799fcf4",
+   "text": "用户询问了Hartrotai（好太太·喜万年）吸油烟机的智能功能，具体想了解其“智能”功能是如何实现的。",
+   "attr": "user",
+   "created": "2026-06-30T11:04:48.927112+00:00"
+  },
+  {
+   "id": "9b82cbc9-80f7-4d22-a02a-2903f2b9cb94",
+   "text": "用户询问了馒头与米饭在增重可能性方面的比较，表明其对营养、热量管理和健康饮食习惯感兴趣。",
+   "attr": "user",
+   "created": "2026-07-02T09:43:09.334467+00:00"
+  },
+  {
+   "id": "27080fe4-7fbd-49bd-947a-345851b3eb65",
+   "text": "用户询问了Bloom Filter实现中使用的具体哈希函数，表明其对其底层机制和实际工程考量感兴趣。",
+   "attr": "user",
+   "created": "2026-07-06T11:51:45.738762+00:00"
+  },
+  {
+   "id": "6e45d3f1-7c2c-4f32-b61f-0037d50b9524",
+   "text": "用户询问了2026年7月6日最受欢迎的学术论文平台。",
+   "attr": "user",
+   "created": "2026-07-06T08:42:35.026046+00:00"
+  },
+  {
+   "id": "f1603648-a113-44d6-b5f3-a0db4bd80ad2",
+   "text": "用户询问了数据库系统中连接复用（连接池）的概念，因此给出了详细解释，涵盖其定义（在多个请求之间共享一个数据库连接，而不是每个请求都新建连接）、动机（避免每条连接 3–10ms 的高创建成本，该成本源于 TCP 握手、认证、会话初始化和注册）、工作流程（预初始化、借用、执行、归还池中）、与非复用方式的对比（连接管理开销降低 90% 以上）、两种实现模式（应用层连接池如 HikariCP/Druid，代理层方案如 PgBouncer/ProxySQL）、关键注意事项（需要重置的状态污染、连接泄漏风险、验证策略包括 connectionTestQuery 和 maxLifetime，以及线程安全约束），以及性能收益（内存使用稳定、连接数可控、数据库压力降低、连接获取延迟接近零）。",
+   "attr": "user",
+   "created": "2026-07-08T12:48:02.640603+00:00"
+  },
+  {
+   "id": "8132eda5-eace-4e54-92fd-cfb8a57321cd",
+   "text": "用户看到并询问了2026年福州中考成绩查询页面的截图，考生名为林宇轩，显示总分723.5分，普通高中录取总分726.5分，六科加体育录取总分327.5分。",
+   "attr": "user",
+   "created": "2026-07-12T08:40:12.150860+00:00"
+  },
+  {
+   "id": "c397473e-22df-49d7-a407-9c05cbeea6fd",
+   "text": "用户请求了与网页设计相关的技能推荐。",
+   "attr": "user",
+   "created": "2026-07-20T03:38:34.300372+00:00"
+  },
+  {
+   "id": "26576ca1-d75e-473a-bee9-67279e5db077",
+   "text": "用户询问了 spaCy 英语模型“en_core_web_sm”的大小，该模型较新版本约为 10–29 MB，较旧版本（如 v1.2.0）约为 50 MB。",
+   "attr": "user",
+   "created": "2026-08-03T07:13:31.660529+00:00"
+  },
+  {
+   "id": "a9a10baf-8b3c-4876-9aa3-a278af9961c6",
+   "text": "用户于2026年7月28日（星期二）参加了Seel的第二轮面试，面试官广泛询问了如何评估智能体效果——用户未能完整回答这一问题，因为他们当前的Shopee聊天智能体尚未纳入专门的评估研究。",
+   "attr": "",
+   "created": "2026-07-31T02:08:12.674041+00:00"
+  },
+  {
+   "id": "5a7bace4-9960-4cd2-8613-00fc63a74c34",
+   "text": "用户询问了 agent-browser.dev 的快速入门指南，这是一个专为 AI Agent 集成而设计的浏览器自动化工具。",
+   "attr": "user",
+   "created": "2026-08-02T03:11:26.706999+00:00"
+  },
+  {
+   "id": "03f6ffbf-4bce-4a02-8910-0461fbfac734",
+   "text": "用户询问了二分查找的时间复杂度，获得了一份详细解释，涵盖标准O(log n)复杂度、旋转数组和二维矩阵搜索等变体、前置条件（有序数据、随机访问）、迭代实现（O(1)）与递归实现（O(log n)）的空间复杂度差异，以及与顺序查找、哈希查找和基于BST的查找的对比分析。",
+   "attr": "assistant",
+   "created": "2026-07-25T06:22:47.718125+00:00"
+  },
+  {
+   "id": "304e70c2-5cef-4ef1-9e3d-73db0ba03f1f",
+   "text": "用户询问了draw.io CLI调用示例，助手提供了全面指南，包括语法、各平台可执行文件路径（macOS：/Applications/draw.io.app/Contents/MacOS/draw.io；Windows：“C:\\Program Files\\draw.io\\draw.io.exe”；Linux：/usr/local/bin/draw.io）、常用选项（-x/--export、-f/--format、-o/--output、--crop、-r/--recursive）以及10个具体用法示例，涵盖SVG/PNG/PDF导出、缩放、批量转换、递归处理、Windows CMD/PowerShell、WSL2互操作性和帮助调用。",
+   "attr": "assistant",
+   "created": "2026-07-22T05:20:45.962101+00:00"
+  }
+ ],
+ "L2_doc_visit": [
+  {
+   "id": "e8fa67a6-859a-41d8-ae32-748cef65e649",
+   "text": "助理说明其工具调用逻辑：当问题涉及实时数据（如当前天气、最新新闻）时会调用天气或搜索工具；当需要验证计算或运行代码时会调用code_execute_code；当需从特定网页获取详细信息时会调用内容提取或网站爬取工具",
+   "attr": "assistant",
+   "created": "2026-06-02T15:08:27.687386+00:00"
+  },
+  {
+   "id": "e32b1cb0-aeb8-4752-82c2-795e34b949bf",
+   "text": "Langfuse Agent技能提供两项核心功能：（1）通过npx langfuse-cli访问Langfuse API，需配置LANGFUSE_PUBLIC_KEY和LANGFUSE_SECRET_KEY环境变量；（2）利用llms.txt、网页抓取以及针对文档、Issue和讨论的全文检索，实现结构化文档获取。",
+   "attr": "assistant",
+   "created": "2026-06-25T03:25:00.997608+00:00"
+  },
+  {
+   "id": "3ad80905-fee8-4760-a3a9-b1bd3810bf6d",
+   "text": "助理明确列出并说明了当前可用的5个具体工具名称及功能：web_search（搜索互联网最新信息、技术文档、新闻等）、browser_visit（访问特定网页并提取内容）、browser_find（在网页中查找特定信息）、browser_scroll / browser_back（网页浏览辅助操作）、code_interpreter（执行Python代码用于数据分析、计算、验证等）",
+   "attr": "assistant",
+   "created": "2026-06-02T15:09:15.339401+00:00"
+  },
+  {
+   "id": "7e8a4233-3a8b-41e7-b5a5-1c2662aa81ea",
+   "text": "用户询问iesdouyin.com是什么网站，了解到该域名是抖音（Douyin）的官方基础服务域名，属于北京字跳网络技术有限公司（字节跳动旗下），用于提供API接口、资源加载、分享跳转和埋点监控等后端技术服务，并非供用户直接浏览的内容网站",
+   "attr": "",
+   "created": "2026-08-12T10:39:28.616903+00:00"
+  },
+  {
+   "id": "ce8795b2-aeb0-4c95-851d-7de4973ccb0c",
+   "text": "用户询问淘江湖是什么网站，助手解释淘江湖是淘宝网官方旗下的综合性社区论坛平台（jianghu.taobao.com），包含茶馆（生活娱乐话题讨论）和生意经（商家经营指导）等核心板块",
+   "attr": "",
+   "created": "2026-08-12T10:43:09.787449+00:00"
+  },
+  {
+   "id": "3d9202b0-9308-4117-afca-d6d20130a99f",
+   "text": "用户询问是否可以在第三方平台发帖，关注点围绕Shopee GEO优化策略，希望了解在Reddit、Quora、知乎、Medium等平台发布内容的合规性和实操方式",
+   "attr": "user",
+   "created": "2026-08-13T17:53:19.769409+00:00"
+  },
+  {
+   "id": "d29d9634-396b-4011-a439-77cacf319bc7",
+   "text": "助理建议用户如有该网站访问权限可直接在浏览器打开链接阅读或复制内容，或可通过搜索其他公开财经来源（如 Seeking Alpha、Motley Fool 或 Sea Limited 官方 IR 页面）获取 Sea Limited Q2 2026 财报电话会议的要点或摘要",
+   "attr": "assistant",
+   "created": "2026-08-20T08:37:59.708826+00:00"
+  },
+  {
+   "id": "d9fe1e42-9a2a-4eb6-b73c-bf3811509955",
+   "text": "用户询问robots.txt是否主要约束搜索引擎爬虫，以及通过Playwright自动收集网站内容是否需要遵守robots.txt",
+   "attr": "user",
+   "created": "2026-08-21T09:07:46.424518+00:00"
+  },
+  {
+   "id": "dfb50126-62c6-49c4-bfac-530f43a9f2e4",
+   "text": "用户访问了 https://github.com/TencentCloud/CubeSandbox/blob/master/docs/zh/guide/quickstart.md 上的 CubeSandbox 快速入门文档，并请求安装说明。",
+   "attr": "user",
+   "created": "2026-08-01T13:31:56.755958+00:00"
+  }
+ ],
+ "L1_weather": [
+  {
+   "id": "c0dcf347-3003-43a8-9e4f-e0ad9590b628",
+   "text": "用户被告知，若发热持续超过3天、体温超过39°C，或伴有皮疹、呼吸困难、意识状态改变或乏力加重等警示信号，应及时就医。",
+   "attr": "assistant",
+   "created": "2026-07-11T09:56:51.886087+00:00"
+  },
+  {
+   "id": "2285800d-5389-40c1-b84c-1c1e29190fca",
+   "text": "用户被告知，39°C伴有发冷的发热发生在发热进程的“体温上升期”，不同于“高温持续期”（感到发热、脸红）和“退热期”（出汗、降温）。",
+   "attr": "assistant",
+   "created": "2026-07-12T06:55:43.808780+00:00"
+  },
+  {
+   "id": "24d7d15f-1ffa-40af-a4fe-525e970bc473",
+   "text": "指导用户对39.5°C发热采用温和物理降温方法：用温水（而非冷水）擦拭颈部、腋窝和腹股沟；保持室温26–28°C；避免包裹或强行捂汗；并饮用温水或电解质溶液补充水分。",
+   "attr": "assistant",
+   "created": "2026-07-12T14:02:57.159374+00:00"
+  },
+  {
+   "id": "74614a5a-e314-47f2-a612-be7ef6065358",
+   "text": "用户被告知，截至2026年7月13日17:34——距离02:00服用双氯芬酸钠（戴芬）已过去15.5小时——针对目前38.5°C的发热可以再服用一剂，并严格嘱咐不要同时服用布洛芬，因为存在胃出血或肾损伤的高风险。",
+   "attr": "assistant",
+   "created": "2026-07-13T09:34:25.935517+00:00"
+  },
+  {
+   "id": "e491c681-c067-4ba8-ad2a-249aa7327609",
+   "text": "用户被指示，在服用双氯芬酸钠（戴芬）后开始出汗时，不要使用物理保暖措施（如厚被子、过度保暖），而应轻轻擦干汗液，更换干爽衣物，并将室温保持在26-28°C，以利于散热。",
+   "attr": "assistant",
+   "created": "2026-07-13T09:38:37.884134+00:00"
+  },
+  {
+   "id": "f9925e12-2fa3-462a-8f13-82d244a101b0",
+   "text": "2026年7月25日20:50，深圳天气阴，气温25°C，体感温度23°C，北风5级（32公里/小时），相对湿度86%，降水量为0（0.0毫米），能见度30公里，云量100%，气压994百帕——较15:58的大雨天气显著好转。",
+   "attr": "assistant",
+   "created": "2026-07-25T12:55:39.044293+00:00"
+  },
+  {
+   "id": "73bffafd-d15c-4155-a2fe-4c36f019fcfd",
+   "text": "用户被推荐惠州巽寮湾/双月湾作为海边放松选项（自驾1-1.5小时或高铁+接驳），可住海景房看日出，但因8月7日惠州35℃体感38℃，当天往返较辛苦，建议住一晚并防暑。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:17:45.319980+00:00"
+  },
+  {
+   "id": "175c76a6-d964-44b1-b5ae-a52c6bdf40f1",
+   "text": "2026年8月7日深圳周边天气均为晴天但炎热：深圳约32℃、惠州35℃体感38℃、顺德34℃、东莞类似，需注意防晒补水，建议早上出发、中午避开暴晒。",
+   "attr": "assistant",
+   "created": "2026-08-06T08:17:45.418526+00:00"
+  },
+  {
+   "id": "c974e7c2-f03c-40ef-9386-526aa57e9190",
+   "text": "用户被建议采用物理降温（如用温水擦拭颈部、腋窝和腹股沟），多喝温水或电解质溶液以保持水分，在服用双氯芬酸钠后1-2小时再次监测体温，如果服药后体温仍≥39°C或出现呼吸窘迫、意识改变、严重呕吐等紧急症状，应立即就医。",
+   "attr": "assistant",
+   "created": "2026-07-13T09:33:19.680312+00:00"
+  },
+  {
+   "id": "9e9f71ba-5aff-49d8-ae3f-5dd61d7cc71f",
+   "text": "助手提醒用户珠海2026年8月9日气温36℃体感35℃，建议户外安排在18点后，随身带水、防晒帽/伞防中暑，室内场馆可作为临时避暑点",
+   "attr": "assistant",
+   "created": "2026-08-09T06:37:59.570648+00:00"
+  },
+  {
+   "id": "bd641c72-2a48-4b09-b8a7-95283237a941",
+   "text": "2026年8月22日，深圳天气小雨，当前气温29°C，体感温度30°C，南风3级（19公里/小时），相对湿度85%，能见度30公里，云量98%，湿度较高体感闷热，外出需携带雨具并注意防滑",
+   "attr": "assistant",
+   "created": "2026-08-22T11:21:31.479490+00:00"
+  },
+  {
+   "id": "65556da3-bb66-4c28-be6e-1396925b23dc",
+   "text": "助理的 weather_get_current_weather 工具可根据 LocationID 或经纬度获取实时天气详情，包括温度、湿度、风力等",
+   "attr": "assistant",
+   "created": "2026-08-23T04:42:59.312414+00:00"
+  },
+  {
+   "id": "2c2ebcc2-7e4f-4b2c-a716-2edf89e3b78b",
+   "text": "助手提醒用户珠海骑行高温注意事项：10:00-16:00严禁长时间骑行（36℃+高湿易中暑），需携带防晒袖套、墨镜、速干衣和电解质水，情侣路沿线每1-2公里有便利店可补水休息",
+   "attr": "assistant",
+   "created": "2026-08-23T07:13:48.153878+00:00"
+  },
+  {
+   "id": "c4c209ad-855f-4068-ac49-f77bdab922b3",
+   "text": "用户当前在珠海行程中面临36℃高温天气，下午4点抵达",
+   "attr": "user",
+   "created": "2026-08-23T07:13:48.227118+00:00"
+  },
+  {
+   "id": "ce004acb-a69d-48a4-97b7-ea9f1c621dac",
+   "text": "2026 年 8 月 3 日，深圳天气阴天，当前气温 28°C，体感温度 31°C，东北风 2 级（9 公里/小时），相对湿度 83%，降水量为 0（0.0 毫米），气压 1000 百帕，能见度 30 公里，云量 99%。",
+   "attr": "assistant",
+   "created": "2026-08-03T08:55:00.613814+00:00"
+  },
+  {
+   "id": "4cb02e6e-e9ea-4006-95f9-9d8b5f1bbfcf",
+   "text": "User was advised to use physical cooling measures including warm-water擦拭 of neck, axillae, and groin; wearing light clothing; maintaining room temperature at ~26°C; and avoiding forced cooling or sweating-inducing practices while awaiting diclofenac sodium (Daifen) onset",
+   "attr": "assistant",
+   "created": "2026-07-13T10:14:18.712616+00:00"
+  },
+  {
+   "id": "3128333b-68f7-4724-a96d-8853522a3979",
+   "text": "用户报告于2026年7月11日当天或前后体温38.6°C，伴有乏力症状，但无流涕、鼻塞或咳嗽。",
+   "attr": "user",
+   "created": "2026-07-11T09:56:51.885807+00:00"
+  },
+  {
+   "id": "91fb6678-f217-4fd3-b3a3-8ba9f2cccab4",
+   "text": "用户被告知，对于38.6°C发热伴乏力且无呼吸道症状的情况，如无禁忌症（如胃溃疡、肾功能损害、过敏），可使用布洛芬，成人常规剂量为每6-8小时200-400毫克（24小时最大剂量1200毫克），物理降温和补水是合适的一线措施。",
+   "attr": "assistant",
+   "created": "2026-07-11T09:56:51.886059+00:00"
+  },
+  {
+   "id": "a32b5556-f261-476f-8bb6-87a1a9625ce5",
+   "text": "User has fully退烧 (defervesced) on or near July 12, 2026, and is now cleared to use air conditioning in cooling mode — with guidance to set temperature between 26–28°C, avoid direct airflow on the body, use dehumidification if humidity is high, and maintain appropriate clothing and hydration to support ongoing immune recovery.",
+   "attr": "user",
+   "created": "2026-07-12T09:43:36.261762+00:00"
+  },
+  {
+   "id": "831f4936-fb79-4865-ad21-91e2bf88be79",
+   "text": "用户体温在2026年7月12日再次升至39°C，并报告感觉怕冷——表明重新进入发热的“体温上升期”，其特征是由于下丘脑设定点上移而引起的寒战、血管收缩和发抖。",
+   "attr": "user",
+   "created": "2026-07-12T11:08:02.046962+00:00"
+  },
+  {
+   "id": "447c98dd-e433-4056-af3d-08cd71738c52",
+   "text": "用户被告知，2026年7月12日若39°C发热和寒战复发，布洛芬不应在距上次服药（14:30服用）不足6小时内重复给药，即最早安全再次给药时间为20:30；在上升期寒战期间，适当的物理保暖措施（轻薄衣物、温热饮品）是合适的，同时应避免强制降温。",
+   "attr": "assistant",
+   "created": "2026-07-12T11:08:02.047028+00:00"
+  },
+  {
+   "id": "80b6c054-41cf-493a-b096-d4fbfc2cea33",
+   "text": "用户被指示在反复发热期间每30-60分钟监测一次体温，如果体温超过39.5°C、持续超过3天，或伴有意识状态改变、呼吸窘迫、皮疹或惊厥等红旗症状，应立即就医。",
+   "attr": "assistant",
+   "created": "2026-07-12T11:08:02.047050+00:00"
+  },
+  {
+   "id": "feb46cde-3c81-4098-995b-b624bebe9c81",
+   "text": "用户于2026年7月12日20:30服用布洛芬，同日22:00测体温为39.5°C——提示1.5小时内退热反应不足，引发紧急临床关注。",
+   "attr": "user",
+   "created": "2026-07-12T14:02:57.159264+00:00"
+  },
+  {
+   "id": "210cf532-d396-49d5-986a-7bba0ec05804",
+   "text": "指示用户持续高热期间每15–30分钟监测体温，并因39.5°C发热在服用布洛芬后1.5小时内无反应而立即就医——这是提示可能严重感染或需要高级干预的危险信号。",
+   "attr": "assistant",
+   "created": "2026-07-12T14:02:57.159392+00:00"
+  },
+  {
+   "id": "4f47dd4f-f7f0-47ec-a903-644c27db5049",
+   "text": "建议用户向医务人员完整报告布洛芬服用时间线（2026年7月12日14:30和20:30）、当前体温39.5°C、相关症状（如乏力）以及任何紧急体征，包括意识改变、呼吸窘迫、皮疹或呕吐。",
+   "attr": "assistant",
+   "created": "2026-07-12T14:02:57.159410+00:00"
+  },
+  {
+   "id": "f1a3ea13-5682-4142-b128-b190741c96ef",
+   "text": "用户于 2026 年 7 月 13 日 15:00 测量体温，记录为 37.9°C——低度发热，表明感染反应仍在持续但正在改善。",
+   "attr": "user",
+   "created": "2026-07-13T07:37:45.039114+00:00"
+  },
+  {
+   "id": "efa15568-54dc-4784-ae60-1c1f1cf1ad60",
+   "text": "用户于2026年7月13日17:30测量体温，记录为38.5°C——为中度发热，较15:00时的低热37.9°C出现反弹，表明感染反应持续但存在波动。",
+   "attr": "user",
+   "created": "2026-07-13T09:33:19.680192+00:00"
+  },
+  {
+   "id": "c33fd1c5-aa7e-41c4-bef3-c436a8882b54",
+   "text": "用户被告知，在2026年7月13日17:30，体温38.5°C，且上次服用双氯芬酸钠（戴芬）的时间为02:00，由于间隔已超过12小时，可以再服用一剂，但严禁同时服用布洛芬，因为重复使用NSAID类药物会导致胃出血或肾损伤的高风险。",
+   "attr": "assistant",
+   "created": "2026-07-13T09:33:19.680272+00:00"
+  },
+  {
+   "id": "c2aea6c5-4954-41db-9756-0665580ac3a0",
+   "text": "用户被建议在服用双氯芬酸钠（戴芬）后喝温水并避免过热，服药后1-2小时内监测体温反应，若发热仍超过39°C或症状加重需就医，恢复期间注意休息并保持清淡饮食。",
+   "attr": "assistant",
+   "created": "2026-07-13T09:34:25.935595+00:00"
+  },
+  {
+   "id": "617f0dae-b9ba-4469-be65-6b8c4630aa55",
+   "text": "用户被警告，如果在2026年7月13日17:38服用双氯芬酸钠（戴芬）后两小时体温仍≥39°C，或症状加重（如呼吸窘迫、精神状态改变、严重呕吐），则需紧急就医评估",
+   "attr": "assistant",
+   "created": "2026-07-13T09:38:37.884167+00:00"
+  },
+  {
+   "id": "4ab84d09-7046-4a9f-8665-ad832cc13bfc",
+   "text": "用户在2026年7月13日18:10测量体温为39.0°C，距离17:38服用一剂双氯芬酸钠（戴芬）约32分钟",
+   "attr": "user",
+   "created": "2026-07-13T10:14:18.712507+00:00"
+  },
+  {
+   "id": "5caf38a2-0140-4b63-b0e3-b9443863fa71",
+   "text": "用户被告知，2026年7月13日18:10测得的39.0°C体温——即服用双氯芬酸钠（戴芬）后32分钟——属于预期的药效尚未显现阶段，因为该药通常在服药后45–60分钟开始显现明显退热效果，并在给药后1–2小时达到峰值",
+   "attr": "assistant",
+   "created": "2026-07-13T10:14:18.712568+00:00"
+  },
+  {
+   "id": "36482293-a338-434b-af4e-b07e1d41468f",
+   "text": "用户被警告，如果2026年7月13日19:30——即服用双氯芬酸钠（戴芬）后近2小时——持续发热≥39.5°C，或出现新的令人担忧的症状（如呼吸窘迫、精神状态改变、严重头痛），则需立即急诊评估",
+   "attr": "assistant",
+   "created": "2026-07-13T10:14:18.712684+00:00"
+  },
+  {
+   "id": "45a3b1c8-fdc1-4b64-a640-4beb1ee57355",
+   "text": "On July 15, 2026,长沙 (Changsha) had sunny weather with a current temperature of 34°C, a 'feels like' temperature of 34°C, south wind at 4 levels (23 km/h), relative humidity of 56%, zero precipitation (0.0 mm), visibility of 15 km, and atmospheric pressure of 1000 hPa",
+   "attr": "assistant",
+   "created": "2026-07-15T01:07:02.102815+00:00"
+  },
+  {
+   "id": "5c56cc26-ccda-4b47-909d-49e53fec2d5f",
+   "text": "2026年7月29日，顺德大良天气预报为阴天，气温25°C，体感温度27°C，湿度90%——体感相当闷热——因此更适合室内用餐和空调交通。",
+   "attr": "assistant",
+   "created": "2026-07-28T14:01:25.176910+00:00"
+  },
+  {
+   "id": "60d467cc-a2e2-486e-9a25-ba382a5cc327",
+   "text": "2026年7月29日，广州东站附近天气预报为阴天，气温26°C，体感温度25°C，风力4级——是三个选项中户外条件最舒适的，适合沿珠江散步或逛二沙岛艺术公园。",
+   "attr": "assistant",
+   "created": "2026-07-28T14:01:25.176942+00:00"
+  },
+  {
+   "id": "de0c5d0e-873e-42bb-a996-a219200e730c",
+   "text": "用户获得了2026年7月29日在广州东站附近用餐的实用建议：早茶在上午9:30前到达以避免排队；午餐避开高峰时段（上午11:30前或下午1:30后）；所有推荐场所均适合独自用餐；鉴于阴天25°C、微风且有零星阵雨风险，浙巴的户外座位较为合适。",
+   "attr": "assistant",
+   "created": "2026-07-28T14:03:15.258421+00:00"
+  },
+  {
+   "id": "02758e24-42a4-4eec-92f4-5548309dcb57",
+   "text": "建议用户将牛奶温热（40–50°C）后饮用，适量摄入（每次200–250毫升），并观察腹胀或恶心等不良反应；牛奶不应替代饮水或口服补液盐的主要补水作用。",
+   "attr": "assistant",
+   "created": "2026-07-12T12:39:02.977287+00:00"
+  },
+  {
+   "id": "2af884cc-997a-41e4-b848-a89db797c5e6",
+   "text": "2026年7月29日，惠州巽寮湾天气预报为小雨，气温25°C，体感温度27°C，湿度94%——需携带雨具和防滑鞋——这降低了当天海边放松的适宜性。",
+   "attr": "assistant",
+   "created": "2026-07-28T14:01:25.176927+00:00"
+  },
+  {
+   "id": "8248a178-4706-4ede-a2a6-f1651364d6d1",
+   "text": "用户在2026年7月12日或前后因39°C发热服用了布洛芬，约一小时后开始出汗——这表明进入退热期，在此期间适度使用风扇（非直接吹、低速或摆头）对于蒸发降温是安全且有帮助的，但应避免直接或冷风气流，以防因毛孔张开和短暂的免疫脆弱期而引发继发性寒战或不适。",
+   "attr": "user",
+   "created": "2026-07-12T07:40:44.528729+00:00"
+  }
+ ],
+ "L1_one_off_event": [
+  {
+   "id": "579976bc-c18a-4ec0-bb89-96906ce381f2",
+   "text": "用户计划于2026年8月7日早上从深圳出发，前往周边1小时可达的目的地进行放松休闲或美食体验，因面试感到疲惫。",
+   "attr": "user",
+   "created": "2026-08-06T08:17:45.159813+00:00"
+  },
+  {
+   "id": "c9df87d2-27e6-41a3-a2fb-82785341688f",
+   "text": "2026年6月1日18:57:06 +08:00，用户的ngrok-tunnel PM2进程因ERR_NGROK_4018错误而失败，表明由于缺少或无效的authtoken导致身份验证失败，并提示用户前往https://dashboard.ngrok.com/signup注册，以及从https://dashboard.ngrok.com/get-started/your-authtoken配置authtoken",
+   "attr": "user",
+   "created": "2026-06-01T11:03:13.063847+00:00"
+  },
+  {
+   "id": "85428846-f7f1-4a58-a3c9-e914aeeed7a3",
+   "text": "用户计划于明早（2026年7月29日）从深圳出发，进行一小时内可达的轻松休闲一日游，特别希望在最近的求职面试后寻找能休息、娱乐和/或体验美食的目的地。",
+   "attr": "user",
+   "created": "2026-07-28T13:59:55.773619+00:00"
+  },
+  {
+   "id": "72bb532e-dfc7-4593-9db8-0d3a701aa4f1",
+   "text": "用户目前位于深圳，计划于明天（2026年7月29日）从深圳（经深圳北站或福田站）出发，进行一小时内高铁车程的轻松一日游。",
+   "attr": "user",
+   "created": "2026-07-28T14:01:25.176854+00:00"
+  }
+ ]
+}

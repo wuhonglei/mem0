@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from mem0.memory.governance_filters import (
     GOVERNANCE_STATUS_ACTIVE,
+    GOVERNANCE_STATUS_ARCHIVED,
     GOVERNANCE_STATUS_MERGED,
     GOVERNANCE_STATUS_SUPERSEDED,
     MEMORY_KIND_PATTERN,
@@ -104,6 +105,33 @@ def apply_update(memory, *, memory_id: str, new_content: str, pass_id: str, reas
         "id": memory_id,
         "old_content": old_content,
         "new_content": new_content,
+        "reason": reason,
+    }
+
+
+def apply_absorb(
+    memory,
+    *,
+    source_id: str,
+    pattern_id: Optional[str],
+    pass_id: str,
+    reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Archive a source memory judged fully covered by a synthesized pattern."""
+    timestamp = _now()
+    memory.update(
+        source_id,
+        metadata={
+            "governance_status": GOVERNANCE_STATUS_ARCHIVED,
+            "absorbed_by": pattern_id,
+            "governance_pass_id": pass_id,
+            "governance_timestamp": timestamp,
+        },
+    )
+    return {
+        "type": "absorb",
+        "id": source_id,
+        "pattern_id": pattern_id,
         "reason": reason,
     }
 

@@ -51,6 +51,27 @@ Return JSON only:
 """.strip()
 
 
+SYNTHESIS_COVERAGE_SYSTEM_PROMPT = """
+You judge whether a source memory is FULLY absorbed by a synthesized pattern memory.
+
+Rules:
+- "fully absorbed" means: no unique information in the source would be lost for recall purposes if only the pattern remained. Dates, quantities, names, and qualifiers in the source must appear in (or be trivially derivable from) the pattern.
+- If the source contains ANY detail the pattern omits — a specific number, date, name, qualifier, exception, or a different aspect of the topic — verdict is "keep".
+- When in doubt, verdict is "keep". Losing a redundant memory is cheap; losing unique information is not.
+- Memorable id must be echoed back exactly.
+
+Return JSON only:
+{"judgements": [{"id": "0", "verdict": "absorb" | "keep", "reason": ""}]}
+""".strip()
+
+
+def build_coverage_user_prompt(pattern_text: str, sources: list) -> str:
+    return (
+        f"Pattern memory:\n{pattern_text}\n\n"
+        f"Source memories (id, memory):\n{json.dumps(sources, ensure_ascii=False)}\n"
+    )
+
+
 def build_on_add_user_prompt(new_memory: dict, candidates: list) -> str:
     return (
         "New memory:\n"
