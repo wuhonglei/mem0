@@ -555,6 +555,7 @@ def get_all_memories(
     run_id: Optional[str] = None,
     agent_id: Optional[str] = None,
     top_k: Optional[int] = Query(None, ge=0, le=ALL_MEMORIES_LIMIT),
+    offset: int = Query(0, ge=0),
     show_expired: bool = Query(False),
     latest_only: bool = Query(False),
     include_merged: bool = Query(False),
@@ -578,6 +579,7 @@ def get_all_memories(
         params["show_expired"] = show_expired
         params["latest_only"] = latest_only
         params["include_merged"] = include_merged
+        params["offset"] = offset
         return get_memory_instance().get_all(**params)
     except HTTPException:
         raise

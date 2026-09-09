@@ -1493,6 +1493,7 @@ class Memory(MemoryBase):
             limit,
             latest_only=latest_only,
             include_merged=include_merged,
+            offset=kwargs.get("offset", 0),
         )
 
         if scale_threshold_notice:
@@ -1510,8 +1511,9 @@ class Memory(MemoryBase):
         output_limit=None,
         latest_only=False,
         include_merged=False,
+        offset=0,
     ):
-        memories_result = self.vector_store.list(filters=filters, top_k=limit)
+        memories_result = self.vector_store.list(filters=filters, top_k=limit, offset=offset)
 
         # Handle different vector store return formats by inspecting first element
         if isinstance(memories_result, (tuple, list)) and len(memories_result) > 0:

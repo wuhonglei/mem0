@@ -24,6 +24,7 @@ from governance.actions import (
     pick_canonical,
 )
 from governance.config import (
+    DREAM_LIST_HARD_CAP,
     DREAM_LIST_TOP_K,
     LLM_CANDIDATE_MIN_SCORE,
     SYNTHESIS_MIN_MEMORIES,
@@ -207,6 +208,43 @@ def is_synthesis_eligible(item: Dict[str, Any]) -> bool:
     if is_pattern_memory(item):
         return False
     return memory_is_active(item)
+
+
+def _list_memories_all(memory, filters: Dict[str, str], *, include_merged: bool = False) -> List[Dict[str, Any]]:
+    """Paginate through the full memory set for a filter scope.
+
+    ``get_all`` caps at ``DREAM_LIST_TOP_K`` per call, so walk the underlying
+    (unfiltered) ordering with raw-SQL-level offset until exhausted. The
+    governance/expiry read filters are applied per page by ``get_all``; pages
+    may therefore return fewer than the page size — exhaustion is detected by
+    the raw fetch count, not the filtered count.
+    """
+    collected: List[Dict[str, Any]] = []
+    seen_ids: set = set()
+    offset = 0
+    while True:
+        result = memory.get_all(
+            filters=filters,
+            top_k=DREAM_LIST_TOP_K,
+            latest_only=False,
+            include_merged=include_merged,
+            offset=offset,
+        )
+        items = result.get("results") if isinstance(result, dict) else result
+        if not items:
+            break
+        for it in items:
+            mid = str(it.get("id"))
+            if mid not in seen_ids:
+                seen_ids.add(mid)
+                collected.append(it)
+        # Fetched a partial raw page (last page) or collected everything visible
+        if len(items) < DREAM_LIST_TOP_K:
+            break
+        offset += DREAM_LIST_TOP_K
+        if offset >= DREAM_LIST_HARD_CAP:
+            break
+    return collected
 
 
 def _list_memories(memory, filters: Dict[str, str], *, include_merged: bool = False) -> List[Dict[str, Any]]:
@@ -511,7 +549,7 @@ def run_dream(
     stats = _empty_stats()
     started = time.perf_counter()
 
-    items = _list_memories(memory, filters, include_merged=False)
+    items = _list_memories_all(memory, filters, include_merged=False)
     stats["memories_scanned"] = len(items)
     last_messages = _gather_last_messages(memory, filters)
 
@@ -541,7 +579,7 @@ def run_dream(
         else:
             # Re-list so merge/supersede from this pass is visible. Skip merged so they
             # do not occupy the get_all top_k; patterns are still excluded by eligibility.
-            items_after = _list_memories(memory, filters, include_merged=False)
+            items_after = _list_memories_all(memory, filters, include_merged=False)
             actions.extend(
                 run_synthesis(memory, items_after, user_id=user_id,
                               pass_id=pass_id, stats=stats, force=force)

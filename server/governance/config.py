@@ -7,6 +7,8 @@ LLM_CANDIDATE_MIN_SCORE = 0.70
 SYNTHESIS_MIN_MEMORIES = 20
 ON_ADD_SEARCH_TOP_K = 10
 DREAM_LIST_TOP_K = 1000
+# Hard cap for paginated full-listing inside a dream pass (safety valve).
+DREAM_LIST_HARD_CAP = 50_000
 
 
 def _env_bool(name: str, default: bool) -> bool:

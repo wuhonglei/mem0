@@ -1,0 +1,410 @@
+[
+ {
+  "id": "d9985b2a-4fa9-462e-8159-6b02cb09f9f1",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "Anthropic 于2026年5月31日发布 Claude Opus 4.8，具备动态工作流（可协调数十至数百个并行子代理）、诚实度提升4倍、Fast Mode价格降低3倍；定价为每百万输入token 5美元、输出token 25美元"
+ },
+ {
+  "id": "63d702c2-bd09-42b1-abc8-c545d0afe724",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "教皇利奥十四世于2026年5月31日前后发布关于AI的通谕《Magnifica Humanitas》"
+ },
+ {
+  "id": "3e9fcb8d-a88c-4127-a6c6-a3928c2eb340",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "微软将于2026年6月2日在Build 2026大会上发布自研AI模型套件，包括专用编程模型；该模型由Mustafa Suleyman领导的微软内部AI部门（MAI）开发；此前因与OpenAI的合作协议限制无法训练顶级基础模型，该限制已于2026年4月重新谈判解除；消息公布后微软股价上涨约3%"
+ },
+ {
+  "id": "688f8324-5a02-48ec-8263-34051a2e3215",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "软银于2026年5月31日宣布将在法国投资530亿美元（450亿欧元）建设AI数据中心，是欧洲同类投资中规模最大的一次；选址法国北部上法兰西地区，总容量达3.1吉瓦；施耐德电气和法国电力集团（EDF）参与合作；三个站点预计于2031年投入运营"
+ },
+ {
+  "id": "c194c8d4-9faf-4115-98d0-42c96d9193fe",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月31日前后，多家初创公司正推出AI保险、新闻验证和财务审计服务，推动AI信任与验证层产业兴起，以应对自主AI代理带来的真实性、安全与责任风险"
+ },
+ {
+  "id": "a708c688-af6e-484d-b9ca-14dec6ea9e9a",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "中国于2026年上半年发布的国家AI标准数量超过2023–2025年三年总和，AI安全已正式纳入国家应急响应计划"
+ },
+ {
+  "id": "8a6adb94-987e-4bbd-9675-90780093da95",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月30日，GitHub Copilot推出基于token的计费模式，引发开发者广泛不满与担忧"
+ },
+ {
+  "id": "e87c809c-b448-4eb6-8a0f-420f01653635",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，xAI宣布放弃JAX GPU堆栈，转向自研C语言训练框架'Grok Build'，因其此前JAX堆栈MFU低于10%"
+ },
+ {
+  "id": "4d3b8a4a-9dc3-43c7-b6c2-b90b933340af",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，OpenAI推出gpt-realtime-translate实时翻译模型，支持70余种语言语音输入，可翻译为13种输出语言，并已在智能眼镜上运行"
+ },
+ {
+  "id": "ea020913-9db4-4b5e-b376-557490feb1c4",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，Google AI发布Nano Banana Pro与Nano Banana 2，Gemini API正式支持gemini-3-pro-image和gemini-3.1-flash-image投入生产"
+ },
+ {
+  "id": "e4ded931-a165-4a6d-b7a8-3d1232e4d0cd",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，NVIDIA宣布将于6月1日发布整合Blackwell GPU与AI单元的ARM笔记本芯片N1X，性能接近RTX 4070，由NVIDIA、微软与Arm联合发布"
+ },
+ {
+  "id": "742e6b67-d172-4822-915d-2bcaa2e53590",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，OpenAI发布Rosalind Biodefense计划，为通过审核的开发者及美国政府伙伴提供GPT-Rosalind可信访问，推动AI在生物防御与公共卫生领域应用"
+ },
+ {
+  "id": "2df5e4a4-1d38-48af-be0e-bf085aa71b85",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，Luma AI发布Luma Agents，支持用户输入内容并定义钩子后，AI自动构建宣传图序列"
+ },
+ {
+  "id": "fe229e92-f99a-4915-817c-ff0db0beb2b2",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，Gemini Omni发布新功能，支持上传草图视频（如画圆）并结合提示词将草图转化为具象化现实内容"
+ },
+ {
+  "id": "12158f75-2e47-4b2c-9ff8-a3be6978d713",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，OpenAI宣布Codex现已支持Windows端计算机使用功能，用户可通过ChatGPT移动应用随时随地启动、审查和引导Windows本地任务"
+ },
+ {
+  "id": "019fee3b-641e-4be8-92d9-cb425633ccea",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，OpenRouter发布Guardrails安全治理工具，支持预算执行、零数据保留、提示词注入防御等企业级AI防护能力"
+ },
+ {
+  "id": "a01b6980-2430-4277-bba3-55ea5202ce7e",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月28日，NVIDIA发布MCG Toolkit，支持自动化生成AI模型卡以满足加州AB-2013法案、欧盟AI法案等监管合规要求"
+ },
+ {
+  "id": "fa8b6727-27fd-4b47-9d0e-bc1a32daf5f6",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "2026年5月29日，Fei-Fei Li（World Labs）团队发布GPIC大规模视觉生成基准数据集，面向新一代大规模生成模型评估需求"
+ },
+ {
+  "id": "82fc454d-7f4a-4c0e-9574-f23c30cb993c",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "美国奥斯汀的VEscape Labs于2026年5月30日推出企业级AI Agent开发服务组合，覆盖自定义AI Agent开发与AI Chatbot开发两大服务线，强调安全审查、发布控制和生产环境就绪，以解决企业采用AI构建工具时的治理缺失痛点"
+ },
+ {
+  "id": "164fff72-2ffa-48a7-b26d-de2f279ba8ec",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "aihot技能专用于中文AI资讯日报与热点查询，覆盖AI圈动态、大模型发布及行业趋势，用户于2026年5月31日使用该技能获取了50条精选资讯（时间范围为2026年5月28日至5月31日）"
+ },
+ {
+  "id": "ced947e0-ed55-46e1-a7cc-e79b88a46251",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "aihot技能于2026年5月31日实际运行效果显示：过去24小时内精选11条AI热点资讯，包括Nano Banana Pro与Nano Banana 2正式发布（Google AI）、特斯拉FSD完成横穿加拿大自动驾驶（6051公里零干预）、软银计划在法国投资750亿欧元用于AI数据中心建设、GitHub Copilot新token计费模式引发开发者不满、AI生成虚拟网红销售Shein劣质商品、新加坡防务论坛称AI风险超过核武器、Pyodide在浏览器中运行Python ASGI应用、NVIDIA或将发布整合Blackwell GPU的ARM笔记本芯片N1X、美国企业开始对AI实施配给制、OpenAI为开源项目维护者提供6个月免费ChatGPT Pro"
+ },
+ {
+  "id": "90a29297-703d-4348-96b8-23e3a5e1d944",
+  "category": "news_snapshot",
+  "created": "2026-05-31",
+  "memory": "aihot技能的核心价值包括：聚合全球AI信源（TechCrunch、Bloomberg、The Verge、X博主、Hacker News等）并进行中文归一化标题与摘要；每日由编辑精挑细选确保信息密度；按5大版块分类（模型发布/产品发布/行业动态/论文研究/技巧与观点）；支持时间窗、分类筛选、关键词搜索（如q=OpenAI）和翻页cursor；支持按日期回溯历史日报（如/api/public/daily/2026-05-07）；无需API Key，公开匿名调用，限流600 req/min"
+ },
+ {
+  "id": "09fe649c-ba49-4c90-8c33-813589c9740f",
+  "category": "news_snapshot",
+  "created": "2026-06-23",
+  "memory": "鉴于无法访问Docker Hub，助手推荐方案2——使用RedisInsight的独立AppImage——作为最实用的解决方案，并指出该方案无需Docker，可直接在Linux上运行，并通过6379端口连接Redis；当前最新版本为v3.6.0（2026年6月发布）。"
+ },
+ {
+  "id": "77605dd4-9b73-4a30-873e-cf854ae0af1b",
+  "category": "news_snapshot",
+  "created": "2026-07-20",
+  "memory": "deep-research技能采用时间感知搜索策略：'今天/刚刚发布'使用月+日+年精度（如'tech news February 28 2026'），'最近/最新'使用月份精度（如'AI breakthroughs February 2026'），'今年趋势'使用年份精度（如'software trends 2026'）"
+ },
+ {
+  "id": "dedca704-133e-4ca0-8921-6cb854011973",
+  "category": "news_snapshot",
+  "created": "2026-07-23",
+  "memory": "Docker和E2B在2026年7月23日或之前宣布建立战略合作伙伴关系，通过将Docker的MCP Gateway与E2B的安全云沙箱相结合来构建可信AI基础设施，解决AI代理执行安全和工具连接风险。"
+ },
+ {
+  "id": "bb14f7c8-41e7-4aa0-a9fa-fd12eac5741f",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "截至2026年7月，月之暗面（Moonshot AI）的估值约为315亿美元，计划于2026年8月启动最终IPO前融资谈判，目标估值500亿美元，并可能在六个月内于香港证券交易所上市。"
+ },
+ {
+  "id": "5726fbb4-8e37-48d2-893d-e072c5891485",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "截至2026年7月下旬，高性能开源模型DeepSeek V4-Flash已获Framework即将推出的桌面PC支持，该机型搭载AMD锐龙AI MAX+ PRO 495芯片，配备192GB统一内存。"
+ },
+ {
+  "id": "ac033487-5e7c-4f34-b5a3-9b498aeb590f",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "佛罗里达大学金融学教授亚历杭德罗·洛佩斯·利拉于2026年7月下旬发表的研究显示，DeepSeek展现出卓越的股票交易表现：其投资组合自2023年推出以来上涨73%，2026年年初至今上涨35%。"
+ },
+ {
+  "id": "3dd9771d-7573-440a-8d78-edee51366bdf",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "长鑫科技（CXMT）于2026年7月28日或之前在上交所科创板上市，首日股价暴涨466%，市值达3.31万亿元人民币，超越工商银行成为A股最大市值公司，标志着国产DRAM自给自足的重要里程碑。"
+ },
+ {
+  "id": "758438d0-9038-4bc9-b48e-19c45dbba0ec",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "在2026年上海世界人工智能大会（WAIC）上，重要进展包括：工信部和国资委联合启动“具身智能与真实场景训练倡议”；视源股份发布“戈壁使命”计划，拟于2030年前在戈壁沙漠建设5GW绿色计算中心；华为昇腾950芯片展示的综合算力较NVIDIA NVL576高出6.7倍；魔法原子和睿尔曼机器人展示了包括真实厨房操作在内的已商业部署机器人。"
+ },
+ {
+  "id": "151bcb84-cf1d-404e-98fe-e987f6d194e7",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "Kimi K3在2026年7月17日发布后一周内下载量增长387%，仅美国市场就有8.6万次下载；由于需求过高，新用户注册一度暂停。"
+ },
+ {
+  "id": "c9fd4e3a-6306-4a73-8f0f-f4183860fc9f",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "月之暗面的Kimi K3获得埃隆·马斯克的公开称赞，他形容其“令人印象深刻”；Kimi目标投前估值达到500亿美元（约合338.5亿元人民币），计划于2026年8月进行最后一轮融资，并可能在六个月内于香港上市。"
+ },
+ {
+  "id": "5cfe3579-b234-4bd8-816e-d9a17b1086b3",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "截至2026年7月下旬，智谱AI的GLM-5.2已具备与Opus同级别的编程能力；创始人唐杰确认，参数量超过1万亿的“史诗加强版”GLM-5.5即将发布。"
+ },
+ {
+  "id": "5a9a24f0-35a1-45ab-979c-d554a0c49947",
+  "category": "news_snapshot",
+  "created": "2026-07-28",
+  "memory": "阿里巴巴的Qwen3.8 Max于2026年7月发布预览版；在V3.1模型支持100万token上下文长度之后，DeepSeek V4据传即将推出。"
+ },
+ {
+  "id": "a6469c63-f6e4-470d-be34-7f1d5ed8ca60",
+  "category": "news_snapshot",
+  "created": "2026-08-09",
+  "memory": "Algorithmic Fashion Companion（算法穿搭伴侣）是Zalando于2018年推出的早期AI功能，基于用户已购买/收藏/关注的'锚定单品'自动生成整套穿搭"
+ },
+ {
+  "id": "105989ea-0209-472e-b148-68cc4a2e4769",
+  "category": "news_snapshot",
+  "created": "2026-08-11",
+  "memory": "华为2026年秋季采取双发布会策略：9月上旬发布Mate XT2三折叠屏手机，9月下旬发布Mate 90系列年度旗舰（搭载新麒麟芯片和鸿蒙7系统），比往年11月的节奏提前与苹果正面交锋"
+ },
+ {
+  "id": "017483d8-36af-42fb-99ed-e40e72159622",
+  "category": "news_snapshot",
+  "created": "2026-08-11",
+  "memory": "小米18系列预计2026年9月底发布，搭载2nm骁龙旗舰芯片、徕卡2亿主摄、7000mAh级电池，预计在高通骁龙峰会（9月22-24日）结束后迅速亮相争夺新一代2nm平台首发"
+ },
+ {
+  "id": "1ee42c0b-6b3f-488f-b933-7004ac06dc40",
+  "category": "news_snapshot",
+  "created": "2026-08-11",
+  "memory": "2026年秋季其他国产品牌手机发布时间：vivo X500系列和OPPO Find X10系列预计9月中下旬发布（分别搭载天玑9600芯片配蔡司/哈苏影像），荣耀Magic9预计9月底发布（与德国ARRI合作调校，双2亿像素摄像头）"
+ },
+ {
+  "id": "1d22054e-5996-4d8a-aec2-08f6d316bb06",
+  "category": "news_snapshot",
+  "created": "2026-08-12",
+  "memory": "Semrush针对生成式AI搜索时代推出了AI Visibility Toolkit和Enterprise AIO解决方案，帮助品牌在LLM（大语言模型）回答中获得曝光和被推荐"
+ },
+ {
+  "id": "77546e96-5ca2-4217-80fb-26f68c2b3f30",
+  "category": "news_snapshot",
+  "created": "2026-08-12",
+  "memory": "Semrush发布了免费的AI搜索运营手册，包含41节课程和90天行动计划，指导营销领导者优化AI搜索表现"
+ },
+ {
+  "id": "eaac47f1-b6ea-4dac-853b-9db98189d826",
+  "category": "news_snapshot",
+  "created": "2026-08-21",
+  "memory": "DeepSeek Harness（dsh）是 DeepSeek AI 于 2026 年 8 月发布的开源、MIT 许可的智能体框架，其最大优势在于「一切皆插件」的彻底开放性，不被单一模型、工具集或智能体类型所绑定"
+ },
+ {
+  "id": "51b05c1a-8f92-4c2e-83fb-fbc6bd2b203d",
+  "category": "news_snapshot",
+  "created": "2026-08-21",
+  "memory": "淘宝GEO策略调整方向：不能海量铺链接，而应争夺稀缺引用席位——确保核心页面（规则页、百科页、榜单页）拥有完美Schema标记；在知乎等第三方平台建立官方号发布带taobao.com回溯链接的深度报告；监控隐性引用（Mention without Citation）"
+ },
+ {
+  "id": "79bfe92a-344f-4fac-94a6-42eeaa464472",
+  "category": "news_snapshot",
+  "created": "2026-08-23",
+  "memory": "深圳润迅通信（XunOPC）推出面向一人公司的AI原生经营操作系统，解决多Agent协同与管理问题，属于Agent基础设施层创新"
+ },
+ {
+  "id": "60d78b4f-ff8c-4dd8-ac4c-d6ac0c547d0d",
+  "category": "news_snapshot",
+  "created": "2026-09-08",
+  "memory": "华为于2026年9月7日发布HUAWEI Mate XT 2非凡大师（第二代三折叠屏，首发麒麟9050 Pro芯片，19,999元起）、Pura X Max、Pura X View、Mate Pad Air、Watch 6、WATCH Ultimate 2雪域白/迪桑特联名款（6,999元）及FreeBuds 7悦彰耳机（首发价999元）"
+ },
+ {
+  "id": "6bb02549-0710-477a-b281-65455d867810",
+  "category": "news_snapshot",
+  "created": "2026-09-08",
+  "memory": "凯迪拉克XT5 PHEV于2026年9月7日上市，搭载1.5T混动+前后双电机，纯电续航215km，综合续航1360km，配备Momenta R7世界模型智驾系统"
+ },
+ {
+  "id": "0cbce226-f712-4f2b-9e29-28d93079f88d",
+  "category": "news_snapshot",
+  "created": "2026-09-08",
+  "memory": "理想MEGA新一代预计于2026年9月2日发布，新增后轮转向、800V主动稳定杆、4颗激光雷达及自研马赫芯片"
+ },
+ {
+  "id": "1023e926-d171-4bb6-8107-ffcff3781063",
+  "category": "one_off_event",
+  "created": "2026-08-23",
+  "memory": "用户计划于2026年8月23日晚前往珠海渔女雕像打卡，助手建议19:00-20:30为最佳观赏时间，夜景灯光下更具神韵"
+ },
+ {
+  "id": "341d0dd2-4e4a-4f87-b43e-b6181a8429e3",
+  "category": "one_off_event",
+  "created": "2026-08-23",
+  "memory": "用户于2026年8月23日下午4点到达珠海，行程为2天1晚"
+ },
+ {
+  "id": "d3eb12bf-ff6d-49a4-a73a-b74148e38281",
+  "category": "one_off_event",
+  "created": "2026-08-23",
+  "memory": "用户于2026年8月23日下午4点到达珠海，计划游玩2天1晚"
+ },
+ {
+  "id": "ce9179fe-d73e-4bad-b8d4-1662dcac5c35",
+  "category": "one_off_event",
+  "created": "2026-08-23",
+  "memory": "用户计划于2026年8月23日下午4点到达珠海，进行为期2天1晚的旅游攻略，助手提供了包含情侣路夜景、景山公园、日月贝、北山村/夏湾夜市等景点的行程安排"
+ },
+ {
+  "id": "76a7c868-7a4f-447d-9e5b-7cc8ec8e6fc8",
+  "category": "single_query_record",
+  "created": "2026-05-31",
+  "memory": "用户使用aihot技能查询2026年5月31日AI热点新闻，获取了涵盖行业动态、模型发布、产品更新、技巧观点及论文研究共50条精选资讯，时间范围覆盖2026年5月28日至5月31日"
+ },
+ {
+  "id": "4e298e08-5d32-4087-b611-4ce5271ffdcf",
+  "category": "single_query_record",
+  "created": "2026-08-11",
+  "memory": "用户询问了2026年秋季手机发布时间节点，收到了一份详细的品牌发布时间梳理，包括苹果iPhone 18系列预计9月8日或9日发布（含首款横向折叠屏iPhone Ultra），标准版iPhone 18和iPhone 18e推迟至2027年春季发布"
+ },
+ {
+  "id": "b2144243-42a5-4aee-bef4-21a3c5f3418e",
+  "category": "weather_snapshot",
+  "created": "2026-05-31",
+  "memory": "用户于2026年5月31日查询深圳当日天气，获知天气为多云、气温29℃、体感温度31℃、相对湿度72%、东风3级（风速12km/h）、无降水（降水量0.0mm）、能见度30公里、大气压强1000 hPa、云量91%，观测时间为当日18:02"
+ },
+ {
+  "id": "2c3bcd1c-4ba8-4e91-bf62-7496bb6575ca",
+  "category": "weather_snapshot",
+  "created": "2026-06-04",
+  "memory": "用户查询了2026年6月4日湖北潜江的天气，收到的报告显示有雾，气温26°C，体感温度30°C，西北风1级（3公里/小时），相对湿度93%，无降水（0.0毫米），能见度6公里，大气压1001百帕，云量91%"
+ },
+ {
+  "id": "fd24070f-81e8-4ded-a157-3789c15d9602",
+  "category": "weather_snapshot",
+  "created": "2026-06-04",
+  "memory": "2026年6月4日，用户得知湖北潜江正遭遇大雾、高湿度（93%）及能见度降低（6公里）的天气，遂发出安全提醒，叮嘱在雾大闷热的天气下减速慢行"
+ },
+ {
+  "id": "395accbe-f252-403a-b045-688277df5e36",
+  "category": "weather_snapshot",
+  "created": "2026-06-23",
+  "memory": "用户查询了2026年6月23日深圳的天气，收到的报告显示天气多云，气温32°C，体感温度33°C，西南风4级（28公里/小时），相对湿度74%，无降水（0.0毫米），大气压995百帕，能见度30公里，云量10%，观测时间为17:02"
+ },
+ {
+  "id": "d6310ec3-0e2e-49d4-9639-c4281ab527d5",
+  "category": "weather_snapshot",
+  "created": "2026-06-23",
+  "memory": "User queried the weather in Shenzhen on June 23, 2026, and received a report indicating cloudy (阴) conditions with a temperature of 30°C, feels-like temperature of 30°C, southwest wind at 4 level (28 km/h), relative humidity of 79%, no precipitation (0.0 mm), visibility of 30 km, cloud cover of 10%, and atmospheric pressure of 996 hPa, observed on the same day"
+ },
+ {
+  "id": "7447482b-d315-4631-a099-d75b2fe49a2e",
+  "category": "weather_snapshot",
+  "created": "2026-06-23",
+  "memory": "User queried the weather in Shenzhen on June 23, 2026, and received a report indicating sunny (晴) conditions with a temperature of 29°C, feels-like temperature of 32°C, southeast wind at 2 level (10 km/h), relative humidity of 84%, no precipitation (0.0 mm), atmospheric pressure of 997 hPa, visibility of 30 km, cloud cover of 10%, dew point temperature of 26°C, observed at 21:58"
+ },
+ {
+  "id": "9d6a3499-5fd6-4ec6-bb24-36abb9b29937",
+  "category": "weather_snapshot",
+  "created": "2026-07-25",
+  "memory": "用户查询了2026年7月25日深圳的天气，收到的报告显示大雨天气，气温27°C，体感温度22°C，北风7级（50公里/小时），相对湿度81%，气压994百帕，能见度1公里，云量99%，观测时间为15：52。"
+ },
+ {
+  "id": "eea47c27-4391-4dc3-a757-1aebca765c3e",
+  "category": "weather_snapshot",
+  "created": "2026-08-02",
+  "memory": "用户查询了 2026 年 8 月 3 日（观察日期次日）深圳的天气预报，收到的报告显示有中雨，气温范围 25°C 至 29°C，风力小于 3 级（无风至轻风）。"
+ },
+ {
+  "id": "027c316e-55ee-4f40-8313-f761535a24a6",
+  "category": "weather_snapshot",
+  "created": "2026-08-02",
+  "memory": "用户查询了 2026 年 8 月 3 日（观察日期次日）深圳的天气预报，收到的报告显示有中雨，气温范围 25°C 至 29°C，风力小于 3 级（无风至轻风），并附加概率模型显示最高气温为 29°C 的可能性最高（32%）。"
+ },
+ {
+  "id": "704b797a-f33d-4f16-a492-763c6f281617",
+  "category": "weather_snapshot",
+  "created": "2026-08-05",
+  "memory": "用户查询了2026年8月5日（观测日期）深圳的天气，收到的报告显示：多云，气温29°C，体感温度31°C，西南风3级（12 km/h），相对湿度73%，无降水（0.0 mm），能见度30公里，云量91%，露点温度23°C，气压996 hPa。"
+ },
+ {
+  "id": "b11372fa-810a-43e4-bd81-f7ea2f0f7857",
+  "category": "weather_snapshot",
+  "created": "2026-08-09",
+  "memory": "用户查询了2026年8月9日深圳的天气，收到的报告显示：晴天，气温33°C，体感温度32°C，西北风5级（30 km/h），相对湿度59%，无降水（0.0 mm），能见度30公里，云量91%，露点温度25°C，大气压强991 hPa，观测时间为10:02"
+ },
+ {
+  "id": "ca646481-fce1-41d3-b6f5-7e10dea35f2d",
+  "category": "weather_snapshot",
+  "created": "2026-08-11",
+  "memory": "用户查询了2026年8月11日深圳的天气，收到的报告显示：多云，气温32°C，体感温度33°C，西北风3级（18 km/h），相对湿度59%，无降水（0.0 mm），能见度30公里，云量91%，大气压强992 hPa，露点温度24°C，观测时间为09:44"
+ },
+ {
+  "id": "51e3f123-50f8-4dfc-bea5-a9e7aa2ef5f6",
+  "category": "weather_snapshot",
+  "created": "2026-08-23",
+  "memory": "用户被提醒8月下旬珠海天气炎热、湿度大、可能有阵雨，处于台风季尾声，需注意防晒防蚊和查看实时天气预报"
+ },
+ {
+  "id": "d9a220cd-05d9-4ddc-891e-e25eeee25417",
+  "category": "weather_snapshot",
+  "created": "2026-09-03",
+  "memory": "用户于2026年9月3日查询深圳天气，获知天气为阴，气温29℃（体感30℃），西北风3级（17 km/h），相对湿度67%，无降水，能见度30公里，云量98%，大气压强993 hPa"
+ },
+ {
+  "id": "22a7ab05-41d2-4213-ae78-505385a08a49",
+  "category": "weather_snapshot",
+  "created": "2026-09-08",
+  "memory": "用户于2026年9月8日查询深圳天气，获知天气预报为晴，气温26℃至34℃，风力小于3级（微风），并收到穿衣、防晒及运动建议"
+ },
+ {
+  "id": "e0777512-32a1-463a-941b-9418e3b2a89c",
+  "category": "weather_snapshot",
+  "created": "2026-09-08",
+  "memory": "用户要求记住2026年9月8日北京的天气：阴有小雨/阵雨转多云，气温15℃至22℃（创今年下半年新低），偏北风2-3级，湿度73%，气压约1018 hPa，上午有小阵雨，午后转多云，限行尾号2和7"
+ }
+]

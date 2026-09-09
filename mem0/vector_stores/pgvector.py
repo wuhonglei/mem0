@@ -544,37 +544,41 @@ class PGVector(VectorStoreBase):
         return {"name": result[0], "count": result[1], "size": result[2]}
 
     def list(
-        self,
-        filters: Optional[dict] = None,
-        top_k: Optional[int] = 100
-    ) -> List[OutputData]:
-        """
-        List all vectors in a collection.
+            self,
+            filters: Optional[dict] = None,
+            top_k: Optional[int] = 100,
+            offset: Optional[int] = 0,
+        ) -> List[OutputData]:
+            """
+            List all vectors in a collection.
 
-        Args:
-            filters (Dict, optional): Filters to apply to the list.
-            top_k (int, optional): Number of vectors to return. Defaults to 100.
+            Args:
+                filters (Dict, optional): Filters to apply to the list.
+                top_k (int): Number of vectors to return. Defaults to 100.
+                offset (int): Number of vectors to skip (applied after ordering).
+                    Combined with ``top_k`` this enables keyset-free pagination over
+                    the ``created_at DESC`` ordering.
 
-        Returns:
-            List[OutputData]: List of vectors.
-        """
-        self._ensure_collection()
-        filter_conditions, filter_params = _build_filter_conditions(filters)
-        filter_clause = sql.SQL("WHERE " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
+            Returns:
+                List[OutputData]: List of vectors.
+            """
+            self._ensure_collection()
+            filter_conditions, filter_params = _build_filter_conditions(filters)
+            filter_clause = sql.SQL("WHERE " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
 
-        with self._get_cursor() as cur:
-            cur.execute(
-                sql.SQL("""
-                SELECT id, payload
-                FROM {}
-                {}
-                ORDER BY (payload->>'created_at')::timestamptz DESC
-                LIMIT %s
-                """).format(self._col(), filter_clause),
-                (*filter_params, top_k),
-            )
-            results = cur.fetchall()
-        return [[OutputData(id=str(r[0]), score=None, payload=r[1]) for r in results]]
+            with self._get_cursor() as cur:
+                cur.execute(
+                    sql.SQL("""
+                    SELECT id, payload
+                    FROM {}
+                    {}
+                    ORDER BY (payload->>'created_at')::timestamptz DESC
+                    LIMIT %s OFFSET %s
+                    """).format(self._col(), filter_clause),
+                    (*filter_params, top_k, offset or 0),
+                )
+                results = cur.fetchall()
+            return [[OutputData(id=str(r[0]), score=None, payload=r[1]) for r in results]]
 
     def __del__(self) -> None:
         """
