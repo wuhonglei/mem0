@@ -21,7 +21,7 @@ This is the OSS counterpart to [Platform Memory Decay](/platform/features/memory
 
 ## Categories
 
-Each memory stores a payload `category`. Scaling only recognizes these six values; anything else (including a user-supplied `metadata.category` like `"movies"`) uses the `misc` curve.
+`category` is a shared payload facet (how long the fact stays true), not a decay-only field. Decay is one consumer: it maps the six values below onto a curve. Anything else (including a user-supplied `metadata.category` like `"movies"`) uses the `misc` curve.
 
 | category | floor | half-life | Typical facts |
 |---|---|---|---|
@@ -67,6 +67,8 @@ curl -X POST http://localhost:8888/search \
 ```
 
 ## How memories get a category
+
+Write-time labeling lives in `mem0.memory.categories` and does not know about floors or half-lives.
 
 - **Inferred `add`**: the server `custom_instructions` ask the extractor to emit `category`. Missing or invalid values fall back (`user` → `preferences`, `assistant` → `knowledge`, else `misc`).
 - **`add(infer=False)`**: keep a caller-supplied `category`; if absent, write `misc`. Dream synthesis writes `interests`.

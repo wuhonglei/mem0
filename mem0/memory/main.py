@@ -26,9 +26,8 @@ from mem0.configs.prompts import (
 from mem0.exceptions import LLMError
 from mem0.exceptions import ValidationError as Mem0ValidationError
 from mem0.memory.base import MemoryBase
+from mem0.memory.categories import assign_direct_category, assign_inferred_category
 from mem0.memory.decay import (
-    assign_direct_category,
-    assign_inferred_category,
     finalize_search_scores,
     search_rank_pool_size,
 )

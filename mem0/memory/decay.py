@@ -4,18 +4,30 @@ A ranking bias only: never deletes, never filters, and does not change
 add / get_all semantics. Access bookkeeping writes payload fields directly
 on the vector store so Memory.update (re-embed + history + updated_at) is
 not on the hot path.
+
+Category values come from ``mem0.memory.categories``. This module only maps
+those values onto decay curves.
 """
 
 from __future__ import annotations
 
 import logging
 import os
-import re
 import threading
 from copy import deepcopy
 from datetime import datetime, timezone
 from math import exp
 from typing import Any, Dict, List, Optional
+
+from mem0.memory.categories import (
+    CATEGORY_INTERESTS,
+    CATEGORY_KNOWLEDGE,
+    CATEGORY_MISC,
+    CATEGORY_PERSONAL_CORE,
+    CATEGORY_PREFERENCES,
+    CATEGORY_STATE,
+    resolve_category,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,24 +35,6 @@ DECAY_MODE_OFF = "off"
 DECAY_MODE_COLLECT = "collect"
 DECAY_MODE_ENFORCE = "enforce"
 VALID_DECAY_MODES = frozenset({DECAY_MODE_OFF, DECAY_MODE_COLLECT, DECAY_MODE_ENFORCE})
-
-CATEGORY_PERSONAL_CORE = "personal_core"
-CATEGORY_PREFERENCES = "preferences"
-CATEGORY_INTERESTS = "interests"
-CATEGORY_STATE = "state"
-CATEGORY_KNOWLEDGE = "knowledge"
-CATEGORY_MISC = "misc"
-
-DECAY_CATEGORIES = frozenset(
-    {
-        CATEGORY_PERSONAL_CORE,
-        CATEGORY_PREFERENCES,
-        CATEGORY_INTERESTS,
-        CATEGORY_STATE,
-        CATEGORY_KNOWLEDGE,
-        CATEGORY_MISC,
-    }
-)
 
 # category -> (floor, half_life_days)
 DECAY_CURVES = {
@@ -58,28 +52,6 @@ DEFAULT_ACCESS_LOG_MAX = 20
 
 ENV_DECAY_MODE = "MEM0_DECAY_MODE"
 ENV_ACCESS_LOG_MAX = "MEM0_DECAY_ACCESS_LOG_MAX"
-
-_STATE_RE = re.compile(r"正在|计划|等待|对比")
-_CORE_RE = re.compile(r"家庭|健康|过敏|职业|家人|父亲|母亲")
-
-
-def prelabel_category(payload: Optional[Dict[str, Any]]) -> Optional[str]:
-    """Deterministic backfill guess. None means 'leave for the LLM'."""
-    if not payload:
-        return None
-    existing = payload.get("category")
-    if existing in DECAY_CATEGORIES:
-        return None
-    if payload.get("memory_kind") == "pattern":
-        return CATEGORY_INTERESTS
-    text = payload.get("data") or ""
-    if _STATE_RE.search(text):
-        return CATEGORY_STATE
-    if _CORE_RE.search(text):
-        return CATEGORY_PERSONAL_CORE
-    if payload.get("attributed_to") == "assistant":
-        return CATEGORY_KNOWLEDGE
-    return None
 
 
 def decay_mode() -> str:
@@ -117,26 +89,6 @@ def should_record_access(override: Optional[bool] = None, mode: Optional[str] = 
     return resolved in (DECAY_MODE_COLLECT, DECAY_MODE_ENFORCE)
 
 
-def assign_inferred_category(extracted: Optional[Dict[str, Any]], metadata: Dict[str, Any]) -> None:
-    """Write category onto an infer=True payload using LLM output plus attribution fallback."""
-    extracted = extracted or {}
-    metadata["category"] = infer_category(
-        extracted.get("category"),
-        extracted.get("attributed_to") or metadata.get("attributed_to"),
-        metadata,
-    )
-
-
-def assign_direct_category(metadata: Dict[str, Any]) -> None:
-    """Fill category on infer=False writes. Keep a caller-supplied value, including custom strings."""
-    existing = metadata.get("category")
-    if existing in DECAY_CATEGORIES:
-        return
-    if existing:
-        return
-    metadata["category"] = CATEGORY_MISC
-
-
 def search_rank_pool_size(limit: int, internal_limit: int, decay_override: Optional[bool] = None) -> int:
     if should_apply_scaling(decay_override):
         return internal_limit
@@ -158,40 +110,6 @@ def finalize_search_scores(
     if should_record_access(decay_override) and vector_store is not None:
         schedule_record_access(vector_store, scored_results[:limit])
     return scored_results
-
-
-def infer_category(
-    category: Optional[str] = None,
-    attributed_to: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> str:
-    """Resolve a decay category.
-
-    A valid six-class value is kept. Missing or non-enum values fall back by
-    attribution (user → preferences, assistant → knowledge) and otherwise misc.
-    """
-    if category in DECAY_CATEGORIES:
-        return category
-    if metadata:
-        meta_category = metadata.get("category")
-        if meta_category in DECAY_CATEGORIES:
-            return meta_category
-        if attributed_to is None:
-            attributed_to = metadata.get("attributed_to")
-    if attributed_to == "user":
-        return CATEGORY_PREFERENCES
-    if attributed_to == "assistant":
-        return CATEGORY_KNOWLEDGE
-    return CATEGORY_MISC
-
-
-def resolve_category(payload: Optional[Dict[str, Any]]) -> str:
-    if not payload:
-        return CATEGORY_MISC
-    category = payload.get("category")
-    if category in DECAY_CATEGORIES:
-        return category
-    return CATEGORY_MISC
 
 
 def _parse_timestamp(value: Any) -> Optional[datetime]:

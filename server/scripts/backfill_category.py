@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 import psycopg
 from psycopg.rows import dict_row
 
-from mem0.memory.decay import DECAY_CATEGORIES, prelabel_category
+from mem0.memory.categories import MEMORY_CATEGORIES, prelabel_category
 
 
 def _build_dsn() -> str:
@@ -45,7 +45,7 @@ def fetch_unlabeled(conn, limit: int, offset: int) -> List[Dict[str, Any]]:
             ORDER BY id
             LIMIT %s OFFSET %s
             """,
-            (list(DECAY_CATEGORIES), limit, offset),
+            (list(MEMORY_CATEGORIES), limit, offset),
         )
         return cur.fetchall()
 
@@ -63,7 +63,7 @@ def count_unlabeled(conn) -> int:
                 OR NOT (payload->>'category' = ANY(%s))
               )
             """,
-            (list(DECAY_CATEGORIES),),
+            (list(MEMORY_CATEGORIES),),
         )
         return cur.fetchone()["cnt"]
 
@@ -107,7 +107,7 @@ def classify_with_llm(rows: List[Dict[str, Any]]) -> Dict[str, str]:
     out = {}
     for item in labels:
         category = item.get("category")
-        if category in DECAY_CATEGORIES and item.get("id"):
+        if category in MEMORY_CATEGORIES and item.get("id"):
             out[str(item["id"])] = category
     return out
 
