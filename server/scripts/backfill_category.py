@@ -83,7 +83,10 @@ def set_category(conn, record_id: str, category: str) -> None:
 def classify_with_llm(rows: List[Dict[str, Any]]) -> Dict[str, str]:
     from openai import OpenAI
 
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    client = OpenAI(
+        api_key=os.environ.get("OPENAI_API_KEY"),
+        base_url=os.environ.get("MEM0_LLM_BASE_URL"),
+    )
     items = []
     for row in rows:
         payload = row["payload"] or {}
