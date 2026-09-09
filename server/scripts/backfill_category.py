@@ -100,7 +100,7 @@ def classify_with_llm(rows: List[Dict[str, Any]]) -> Dict[str, str]:
         json.dumps(items, ensure_ascii=False)
     )
     response = client.chat.completions.create(
-        model=os.environ.get("MEM0_DEFAULT_LLM_MODEL", "gpt-4o-mini"),
+        model=os.environ.get("MEM0_LLM_MODEL") or os.environ.get("MEM0_DEFAULT_LLM_MODEL", "gpt-4o-mini"),
         response_format={"type": "json_object"},
         messages=[{"role": "user", "content": prompt}],
     )
