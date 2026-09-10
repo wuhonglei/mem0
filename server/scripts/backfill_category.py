@@ -30,23 +30,42 @@ def _build_dsn() -> str:
     return f"postgresql://{user}:{password}@{host}:{port}/{db}"
 
 
-def fetch_unlabeled(conn, limit: int, offset: int) -> List[Dict[str, Any]]:
+def fetch_unlabeled(conn, limit: int, after_id: str = "") -> List[Dict[str, Any]]:
+    """Keyset pagination: fetch next batch of unlabeled rows after `after_id`."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT id, payload
-            FROM memories
-            WHERE payload->>'data' IS NOT NULL
-              AND (
-                payload->>'category' IS NULL
-                OR payload->>'category' = ''
-                OR NOT (payload->>'category' = ANY(%s))
-              )
-            ORDER BY id
-            LIMIT %s OFFSET %s
-            """,
-            (list(MEMORY_CATEGORIES), limit, offset),
-        )
+        if after_id:
+            cur.execute(
+                """
+                SELECT id, payload
+                FROM memories
+                WHERE payload->>'data' IS NOT NULL
+                  AND (
+                    payload->>'category' IS NULL
+                    OR payload->>'category' = ''
+                    OR NOT (payload->>'category' = ANY(%s))
+                  )
+                  AND id > %s
+                ORDER BY id
+                LIMIT %s
+                """,
+                (list(MEMORY_CATEGORIES), after_id, limit),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT id, payload
+                FROM memories
+                WHERE payload->>'data' IS NOT NULL
+                  AND (
+                    payload->>'category' IS NULL
+                    OR payload->>'category' = ''
+                    OR NOT (payload->>'category' = ANY(%s))
+                  )
+                ORDER BY id
+                LIMIT %s
+                """,
+                (list(MEMORY_CATEGORIES), limit),
+            )
         return cur.fetchall()
 
 
@@ -134,7 +153,7 @@ def main() -> None:
             print("Nothing to do.")
             return
 
-        offset = 0
+        after_id = ""
         processed = 0
         prelabeled = 0
         llm_labeled = 0
@@ -142,10 +161,11 @@ def main() -> None:
         to_process = args.limit or remaining
         while processed < to_process:
             batch = fetch_unlabeled(
-                conn, min(args.batch_size, to_process - processed), offset)
+                conn, min(args.batch_size, to_process - processed), after_id)
             if not batch:
                 break
             needs_llm: List[Dict[str, Any]] = []
+            last_id = str(batch[-1]["id"])
             for row in batch:
                 processed += 1
                 guess = prelabel_category(row["payload"] or {})
@@ -173,7 +193,11 @@ def main() -> None:
 
             if not args.dry_run:
                 conn.commit()
-            offset += len(batch)
+            after_id = last_id  # keyset: next batch starts after last id
+
+            # Progress every 10 batches
+            if processed % (args.batch_size * 10) == 0:
+                print(f"  ... processed {processed}/{to_process}", flush=True)
 
         print("Distribution:", dict(distribution))
         print(
