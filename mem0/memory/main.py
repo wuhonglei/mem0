@@ -1507,7 +1507,7 @@ class Memory(MemoryBase):
             top_k (int, optional): The maximum number of memories to return. Defaults to 20.
             show_expired (bool, optional): Include expired memories. Defaults to False.
             latest_only (bool, optional): Return only active memories, excluding superseded
-                and merged. Defaults to False.
+                and merged. Defaults to True.
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
 
         Returns:
@@ -1671,7 +1671,7 @@ class Memory(MemoryBase):
         explain: bool = False,
         reference_date: Optional[Any] = None,
         show_expired: bool = False,
-        latest_only: bool = False,
+        latest_only: bool = True,
         include_merged: bool = False,
         decay_override: Optional[bool] = None,
         **kwargs,
@@ -1708,7 +1708,7 @@ class Memory(MemoryBase):
             reference_date (Any, optional): Platform-only temporal parameter. Not supported in OSS.
             show_expired (bool, optional): Include expired memories. Defaults to False.
             latest_only (bool, optional): Return only active memories, excluding superseded
-                and merged. Defaults to False.
+                and merged. Defaults to True.
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
             decay_override (bool, optional): Force decay scaling on (True) or off (False),
                 ignoring MEM0_DECAY_MODE. None follows the env mode. A/B runs skip access writes.
@@ -3338,7 +3338,7 @@ class AsyncMemory(MemoryBase):
             top_k (int, optional): The maximum number of memories to return. Defaults to 20.
             show_expired (bool, optional): Include expired memories. Defaults to False.
             latest_only (bool, optional): Return only active memories, excluding superseded
-                and merged. Defaults to False.
+                and merged. Defaults to True.
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
 
         Returns:
@@ -3502,7 +3502,7 @@ class AsyncMemory(MemoryBase):
         explain: bool = False,
         reference_date: Optional[Any] = None,
         show_expired: bool = False,
-        latest_only: bool = False,
+        latest_only: bool = True,
         include_merged: bool = False,
         decay_override: Optional[bool] = None,
         **kwargs,
@@ -3539,7 +3539,7 @@ class AsyncMemory(MemoryBase):
             reference_date (Any, optional): Platform-only temporal parameter. Not supported in OSS.
             show_expired (bool, optional): Include expired memories. Defaults to False.
             latest_only (bool, optional): Return only active memories, excluding superseded
-                and merged. Defaults to False.
+                and merged. Defaults to True.
             include_merged (bool, optional): Include memories marked as merged. Defaults to False.
             decay_override (bool, optional): Force decay scaling on (True) or off (False),
                 ignoring MEM0_DECAY_MODE. None follows the env mode. A/B runs skip access writes.

@@ -43,6 +43,7 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy import func, select
 
 from mem0.exceptions import ValidationError as Mem0ValidationError
+from mem0.memory.categories import MEMORY_CATEGORIES
 from mem0.memory.governance_filters import GOVERNANCE_PAYLOAD_KEYS
 
 load_dotenv()
@@ -327,7 +328,7 @@ class SearchRequest(BaseModel):
     show_expired: Optional[bool] = Field(
         None, description="Include expired memories.")
     latest_only: Optional[bool] = Field(
-        None, description="Return only active memories (exclude superseded and merged).")
+        True, description="Return only active memories (exclude superseded and merged).")
     include_merged: Optional[bool] = Field(
         None, description="Include memories marked as merged.")
     decay_override: Optional[bool] = Field(
@@ -609,6 +610,7 @@ def _scoped_list_filters(
     agent_id: Optional[str],
     governance_status: Optional[str],
     memory_kind: Optional[str],
+    category: Optional[str],
     created_from: Optional[str],
     created_to: Optional[str],
 ) -> Dict[str, Any]:
@@ -621,6 +623,11 @@ def _scoped_list_filters(
         raise HTTPException(
             status_code=400,
             detail="memory_kind must be one of: pattern, ordinary",
+        )
+    if category is not None and category not in MEMORY_CATEGORIES:
+        raise HTTPException(
+            status_code=400,
+            detail="category must be one of: personal_core, preferences, interests, state, knowledge, misc",
         )
     parsed_from: Optional[datetime] = None
     parsed_to: Optional[datetime] = None
@@ -652,6 +659,8 @@ def _scoped_list_filters(
         filters["memory_kind"] = "pattern"
     elif memory_kind == "ordinary":
         filters["memory_kind"] = {"ne": "pattern"}
+    if category:
+        filters["category"] = category
     if created_from or created_to:
         created: Dict[str, str] = {}
         if created_from:
@@ -703,6 +712,7 @@ def get_all_memories(
     include_merged: Optional[bool] = Query(None),
     governance_status: Optional[str] = Query(None),
     memory_kind: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
     created_from: Optional[str] = Query(None),
     created_to: Optional[str] = Query(None),
     _auth=Depends(verify_auth),
@@ -711,7 +721,7 @@ def get_all_memories(
 
     Pagination: pass ``page`` / ``page_size`` (1-indexed) or the legacy ``top_k`` / ``offset``.
     Response is ``{"results": [...], "count": N}`` when the store can count matches.
-    Optional ``governance_status``, ``memory_kind``, ``created_from``, and ``created_to``
+    Optional ``governance_status``, ``memory_kind``, ``category``, ``created_from``, and ``created_to``
     are merged into the same filters dict passed to ``get_all``.
     """
     try:
@@ -734,6 +744,7 @@ def get_all_memories(
             agent_id=agent_id,
             governance_status=governance_status,
             memory_kind=memory_kind,
+            category=category,
             created_from=created_from,
             created_to=created_to,
         )

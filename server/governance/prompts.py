@@ -52,12 +52,17 @@ Return JSON only:
 
 
 SYNTHESIS_COVERAGE_SYSTEM_PROMPT = """
-You judge whether a source memory is FULLY absorbed by a synthesized pattern memory.
+You judge whether a source memory is absorbed by a synthesized pattern memory.
 
-Rules:
-- "fully absorbed" means: no unique information in the source would be lost for recall purposes if only the pattern remained. Dates, quantities, names, and qualifiers in the source must appear in (or be trivially derivable from) the pattern.
-- If the source contains ANY detail the pattern omits — a specific number, date, name, qualifier, exception, or a different aspect of the topic — verdict is "keep".
-- When in doubt, verdict is "keep". Losing a redundant memory is cheap; losing unique information is not.
+Rules (lossy-biased by design):
+- Default verdict is "absorb": the pattern is the durable conclusion; most concrete
+  sources are restatements or instances of it and are safe to archive.
+- Verdict "keep" ONLY when the source carries information clearly OUTSIDE the
+  pattern's scope — a different topic, a contradiction, or a user-specific fact
+  (identity, preference, plan) the pattern does not represent.
+- Minor details the pattern omits (specific numbers, dates, names, qualifiers
+  within the same topic) do NOT justify "keep" — they are recoverable from chat
+  history and recall is served by the pattern.
 - Memorable id must be echoed back exactly.
 
 Return JSON only:

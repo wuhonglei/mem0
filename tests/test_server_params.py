@@ -526,7 +526,8 @@ class TestCallSignatureMatch:
         })
         assert resp.status_code == 200
         _, kwargs = mock_memory.search.call_args
-        valid_params = {"query", "top_k", "filters", "threshold", "rerank"}
+        valid_params = {"query", "top_k", "filters", "threshold", "rerank",
+                        "latest_only", "include_merged", "show_expired"}
         for key in kwargs:
             assert key in valid_params, f"Unexpected kwarg '{key}' forwarded to Memory.search()"
         assert kwargs["filters"]["user_id"] == "u1"
@@ -877,6 +878,12 @@ class TestGetMemoriesPayloadFilters:
         _, kwargs = mock_memory.get_all.call_args
         assert kwargs["filters"] == {"user_id": "u1", "memory_kind": {"ne": "pattern"}}
 
+    def test_category_state(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "category": "state"})
+        assert resp.status_code == 200
+        _, kwargs = mock_memory.get_all.call_args
+        assert kwargs["filters"] == {"user_id": "u1", "category": "state"}
+
     def test_created_from_and_to(self, client, mock_memory):
         resp = client.get(
             "/memories",
@@ -903,6 +910,11 @@ class TestGetMemoriesPayloadFilters:
 
     def test_invalid_memory_kind_400(self, client, mock_memory):
         resp = client.get("/memories", params={"user_id": "u1", "memory_kind": "fact"})
+        assert resp.status_code == 400
+        mock_memory.get_all.assert_not_called()
+
+    def test_invalid_category_400(self, client, mock_memory):
+        resp = client.get("/memories", params={"user_id": "u1", "category": "food"})
         assert resp.status_code == 400
         mock_memory.get_all.assert_not_called()
 
