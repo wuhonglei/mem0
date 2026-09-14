@@ -22,6 +22,7 @@ class DreamRunRequest(BaseModel):
     user_id: Optional[str] = None
     agent_id: Optional[str] = None
     run_id: Optional[str] = None
+    consolidate: bool = Field(True, description="Run the consolidate (merge/supersede) pass.")
     synthesize: bool = Field(True, description="Run the synthesis pass after consolidate.")
     force: bool = Field(False, description="Bypass the minimum-memory threshold for synthesis.")
 
@@ -39,6 +40,7 @@ def run_dream_pass(body: DreamRunRequest, _auth=Depends(verify_auth), db: Sessio
             user_id=body.user_id,
             agent_id=body.agent_id,
             run_id=body.run_id,
+            consolidate=body.consolidate,
             synthesize=body.synthesize,
             force=body.force,
         )

@@ -820,6 +820,7 @@ def run_dream(
     user_id: Optional[str] = None,
     agent_id: Optional[str] = None,
     run_id: Optional[str] = None,
+    consolidate: bool = True,
     synthesize: bool = True,
     force: bool = False,
 ) -> Dict[str, Any]:
@@ -837,24 +838,27 @@ def run_dream(
     last_messages = _gather_last_messages(memory, filters)
 
     actions: List[Dict[str, Any]] = []
-    for cluster in _cluster_active(memory, items, filters):
-        cluster_rows, index_to_real = _indexed_rows(
-            [{"id": _memory_id(i), "memory": _memory_text(i), "status": memory_status(i)} for i in cluster],
-            fields=("memory", "status"),
-        )
-        parsed = _llm_json(
-            memory,
-            CONSOLIDATE_SYSTEM_PROMPT,
-            build_consolidate_user_prompt(cluster_rows, last_messages),
-        )
-        actions.extend(
-            _apply_llm_actions(
-                memory,
-                _remap_llm_actions(parsed.get("actions") or [], index_to_real),
-                pass_id,
-                stats,
+    if not consolidate and not synthesize:
+        raise ValueError("At least one of consolidate / synthesize must be enabled")
+    if consolidate:
+        for cluster in _cluster_active(memory, items, filters):
+            cluster_rows, index_to_real = _indexed_rows(
+                [{"id": _memory_id(i), "memory": _memory_text(i), "status": memory_status(i)} for i in cluster],
+                fields=("memory", "status"),
             )
-        )
+            parsed = _llm_json(
+                memory,
+                CONSOLIDATE_SYSTEM_PROMPT,
+                build_consolidate_user_prompt(cluster_rows, last_messages),
+            )
+            actions.extend(
+                _apply_llm_actions(
+                    memory,
+                    _remap_llm_actions(parsed.get("actions") or [], index_to_real),
+                    pass_id,
+                    stats,
+                )
+            )
 
     if synthesize:
         if not user_id:
