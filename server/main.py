@@ -137,6 +137,9 @@ MEM0_EMBEDDER_BASE_URL = os.environ.get("MEM0_EMBEDDER_BASE_URL")
 MEM0_EMBEDDER_DIMENSION = os.environ.get("MEM0_EMBEDDER_DIMENSION")
 MEM0_LLM_TIMEOUT = float(os.environ.get("MEM0_LLM_TIMEOUT", "120"))
 MEM0_LLM_EXTRA_BODY = os.environ.get("MEM0_LLM_EXTRA_BODY")
+# Optional separate API key for the LLM (falls back to OPENAI_API_KEY when
+# unset). Needed when LLM and embedder use different providers.
+MEM0_LLM_API_KEY = os.environ.get("MEM0_LLM_API_KEY") or OPENAI_API_KEY
 
 _vector_store_config: Dict[str, Any] = {
     "host": POSTGRES_HOST,
@@ -158,7 +161,7 @@ if MEM0_EMBEDDER_DIMENSION:
     _vector_store_config["embedding_model_dims"] = dim
 
 _llm_config: Dict[str, Any] = {
-    "api_key": OPENAI_API_KEY,
+    "api_key": MEM0_LLM_API_KEY,
     "temperature": MEM0_LLM_TEMPERATURE,
     "model": MEM0_LLM_MODEL,
     "timeout": MEM0_LLM_TIMEOUT,
