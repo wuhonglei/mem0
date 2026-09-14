@@ -368,7 +368,10 @@ class TestExistingParamsUnchanged:
         _, kwargs = mock_memory.add.call_args
         assert kwargs["user_id"] == "u1"
         assert kwargs["agent_id"] == "a1"
-        assert kwargs["metadata"] == {"source": "test"}
+        # Caller metadata is forwarded verbatim; the server additionally stamps
+        # the governance status every read path assumes (see
+        # tests/test_server_governance_stamp.py).
+        assert kwargs["metadata"] == {"source": "test", "governance_status": "active"}
 
 
 # ===========================================================================

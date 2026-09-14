@@ -44,7 +44,7 @@ from sqlalchemy import func, select
 
 from mem0.exceptions import ValidationError as Mem0ValidationError
 from mem0.memory.categories import MEMORY_CATEGORIES
-from mem0.memory.governance_filters import GOVERNANCE_PAYLOAD_KEYS
+from mem0.memory.governance_filters import GOVERNANCE_PAYLOAD_KEYS, GOVERNANCE_STATUS_ACTIVE
 
 load_dotenv()
 
@@ -511,6 +511,12 @@ def add_memory(memory_create: MemoryCreate, _auth=Depends(verify_auth)):
 
     params = {k: v for k, v in memory_create.model_dump(
     ).items() if v is not None and k != "messages"}
+    # Records carry their governance status explicitly. Every read path treats a
+    # missing value as active, so stamping it here keeps the stored payload in
+    # agreement with them for raw SQL, dashboards and audits alike.
+    metadata = dict(params.get("metadata") or {})
+    metadata.setdefault("governance_status", GOVERNANCE_STATUS_ACTIVE)
+    params["metadata"] = metadata
     try:
         response = get_memory_instance().add(
             messages=[m.model_dump() for m in memory_create.messages], **params)
