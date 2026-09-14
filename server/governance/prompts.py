@@ -97,3 +97,28 @@ def build_consolidate_user_prompt(cluster: list, last_messages: list) -> str:
 
 def build_synthesis_user_prompt(memories: list) -> str:
     return f"Active memories eligible for synthesis:\n{json.dumps(memories, ensure_ascii=False)}\n"
+
+
+PATTERN_GOVERNANCE_SYSTEM_PROMPT = """
+You judge whether old pattern memories are fully covered by a NEW pattern memory.
+
+Rules:
+- "fully covered" means: the old pattern states nothing the new pattern does not
+  already state or imply. A rewording, subset, or narrower instance of the new
+  pattern is covered.
+- If the old pattern carries a distinct insight, angle, or scope the new one
+  lacks, verdict is "keep".
+- When in doubt, verdict is "keep". Keeping a redundant pattern is cheap;
+  archiving a distinct one is not.
+- Memorable id must be echoed back exactly.
+
+Return JSON only:
+{"judgements": [{"id": "0", "verdict": "absorb" | "keep", "reason": ""}]}
+""".strip()
+
+
+def build_pattern_governance_user_prompt(new_pattern: str, old_patterns: list) -> str:
+    return (
+        f"NEW pattern memory:\n{new_pattern}\n\n"
+        f"Old pattern memories (id, memory):\n{json.dumps(old_patterns, ensure_ascii=False)}\n"
+    )

@@ -9,6 +9,13 @@ ON_ADD_SEARCH_TOP_K = 10
 DREAM_LIST_TOP_K = 1000
 # Hard cap for paginated full-listing inside a dream pass (safety valve).
 DREAM_LIST_HARD_CAP = 50_000
+# Synthesis batching: per-batch character budget for the user prompt. With
+# ~170 chars of JSON overhead per memory this keeps a batch inside a ~30k
+# token window, safe for the configured LLM regardless of store size.
+SYNTHESIS_BATCH_CHAR_BUDGET = 100_000
+# Pattern governance: similarity above which a new/old pattern pair is sent
+# for LLM coverage judgement (pattern-on-pattern near-duplicate cleanup).
+PATTERN_DEDUP_SIMILARITY = 0.90
 
 
 def _env_bool(name: str, default: bool) -> bool:

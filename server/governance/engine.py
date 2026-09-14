@@ -28,6 +28,8 @@ from governance.config import (
     DREAM_LIST_HARD_CAP,
     DREAM_LIST_TOP_K,
     LLM_CANDIDATE_MIN_SCORE,
+    PATTERN_DEDUP_SIMILARITY,
+    SYNTHESIS_BATCH_CHAR_BUDGET,
     SYNTHESIS_MIN_MEMORIES,
     dream_on_add_enabled,
     absorb_enabled,
@@ -502,6 +504,100 @@ def _cluster_active(memory, items: List[Dict[str, Any]], filters: Dict[str, str]
     return [group for group in buckets.values() if len(group) >= 2]
 
 
+def _synthesis_batches(items: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    """Split eligible memories into LLM-safe batches.
+
+    Grouping is best-effort topic-affine: memories sharing a union-find
+    cluster (>=0.70 cosine) stay in the same batch when possible; clusters
+    larger than the budget are split greedily; singletons (no near
+    neighbours) are packed together so they still reach the LLM.
+    """
+    clusters = _singleton_aware_clusters(items)
+    batches: List[List[Dict[str, Any]]] = []
+    current: List[Dict[str, Any]] = []
+    current_chars = 0
+    for cluster in clusters:
+        cluster_chars = sum(len(_memory_text(i)) + 40 for i in cluster)
+        if current and current_chars + cluster_chars > SYNTHESIS_BATCH_CHAR_BUDGET:
+            batches.append(current)
+            current, current_chars = [], 0
+        if cluster_chars > SYNTHESIS_BATCH_CHAR_BUDGET:
+            # Oversized cluster: split greedily on its own.
+            chunk: List[Dict[str, Any]] = []
+            chunk_chars = 0
+            for item in cluster:
+                item_chars = len(_memory_text(item)) + 40
+                if chunk and chunk_chars + item_chars > SYNTHESIS_BATCH_CHAR_BUDGET:
+                    batches.append(chunk)
+                    chunk, chunk_chars = [], 0
+                chunk.append(item)
+                chunk_chars += item_chars
+            if chunk:
+                batches.append(chunk)
+            continue
+        current.extend(cluster)
+        current_chars += cluster_chars
+    if current:
+        batches.append(current)
+    return batches
+
+
+def _singleton_aware_clusters(items: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    """Group items into similarity clusters plus one bucket of singletons.
+
+    Uses difflib-based text proximity rather than vector search: synthesis
+    batches need topic affinity, not recall precision, and this avoids N
+    vector searches per pass (the full vector clustering already ran for
+    consolidate; repeating it here only for batching would be wasteful).
+    """
+    from difflib import SequenceMatcher
+
+    eligible = [i for i in items if _memory_id(i)]
+    parent = {str(_memory_id(i)): str(_memory_id(i)) for i in eligible}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: str, b: str) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    texts = {str(_memory_id(i)): _memory_text(i) for i in eligible}
+    ids = list(texts)
+    joined = {mid: _topic_key(text) for mid, text in texts.items()}
+    by_key: Dict[str, List[str]] = {}
+    for mid in ids:
+        by_key.setdefault(joined[mid], []).append(mid)
+    for group in by_key.values():
+        for other in group[1:]:
+            union(group[0], other)
+    # Light pairwise pass on a cheap lexical ratio for short stores.
+    if len(ids) <= 400:
+        for a_i in range(len(ids)):
+            for b_i in range(a_i + 1, len(ids)):
+                ra, rb = ids[a_i], ids[b_i]
+                if find(ra) == find(rb):
+                    continue
+                ratio = SequenceMatcher(
+                    None, _topic_key(texts[ra]), _topic_key(texts[rb])).quick_ratio()
+                if ratio >= 0.60:
+                    union(ra, rb)
+    by_id = {str(_memory_id(i)): i for i in eligible}
+    buckets: Dict[str, List[Dict[str, Any]]] = {}
+    for mid in ids:
+        buckets.setdefault(find(mid), []).append(by_id[mid])
+    return list(buckets.values())
+
+
+def _topic_key(text: str) -> str:
+    """Cheap lexical key for topic grouping (first N significant chars)."""
+    return "".join(text.split())[:120]
+
+
 def run_synthesis(memory, items: List[Dict[str, Any]], *, user_id: str, pass_id: str, stats: Dict[str, int], force: bool = False) -> List[Dict[str, Any]]:
     eligible = [i for i in items if is_synthesis_eligible(i)]
     if len(eligible) < SYNTHESIS_MIN_MEMORIES and not force:
@@ -509,81 +605,212 @@ def run_synthesis(memory, items: List[Dict[str, Any]], *, user_id: str, pass_id:
     if not eligible:
         return []
     existing_hashes = _existing_evidence_hashes(items)
-    prompt_rows, index_to_real = _indexed_rows(
-        [{"id": _memory_id(i), "memory": _memory_text(i)} for i in eligible],
-        fields=("memory",),
-    )
-    parsed = _llm_json(
-        memory,
-        SYNTHESIS_SYSTEM_PROMPT,
-        build_synthesis_user_prompt(prompt_rows),
-    )
-    by_real_id = {str(_memory_id(i)): i for i in eligible}
-    applied = []
-    for pattern in parsed.get("patterns") or []:
-        evidence = _resolve_indexes(pattern.get("evidence_ids"), index_to_real)
-        if len(evidence) < 2:
-            continue
-        text = (pattern.get("text") or "").strip()
-        if not text:
-            continue
-        hashed = evidence_hash(evidence)
-        if hashed in existing_hashes:
-            continue
-        action = apply_synthesize(
-            memory,
-            text=text,
-            evidence_ids=evidence,
-            user_id=user_id,
-            pass_id=pass_id,
-            reason=pattern.get("reason"),
-        )
-        applied.append(action)
-        existing_hashes.add(hashed)
-        stats["synthesized"] += 1
-        stats["created"] += 1
+    applied: List[Dict[str, Any]] = []
+    new_pattern_ids: List[Optional[str]] = []
 
-        # Coverage pass: archive source memories fully absorbed by the new
-        # pattern. A separate conservative LLM judgement per pattern; any
-        # source with unique details is kept. Off by default.
-        if absorb_enabled():
-            new_id = action.get("id")
-            sources = [
-                {"id": str(idx), "memory": _memory_text(by_real_id[rid])}
-                for idx, rid in zip(pattern.get("evidence_ids") or [], evidence)
-                if rid in by_real_id
-            ]
-            if len(sources) >= 2:
-                try:
-                    judged = _llm_json(
+    for batch_no, batch in enumerate(_synthesis_batches(eligible)):
+        if not batch:
+            continue
+        prompt_rows, index_to_real = _indexed_rows(
+            [{"id": _memory_id(i), "memory": _memory_text(i)} for i in batch],
+            fields=("memory",),
+        )
+        if not prompt_rows:
+            continue
+        try:
+            parsed = _llm_json(
+                memory,
+                SYNTHESIS_SYSTEM_PROMPT,
+                build_synthesis_user_prompt(prompt_rows),
+            )
+        except Exception as e:
+            # Degrade gracefully: one failed batch must not kill the pass
+            # (consolidate results are already applied).
+            logger.warning(
+                "Synthesis batch %d failed (%d memories): %s", batch_no, len(batch), e)
+            stats["synthesis_batches_failed"] = stats.get("synthesis_batches_failed", 0) + 1
+            continue
+        by_real_id = {str(_memory_id(i)): i for i in batch}
+        for pattern in parsed.get("patterns") or []:
+            evidence = _resolve_indexes(pattern.get("evidence_ids"), index_to_real)
+            if len(evidence) < 2:
+                continue
+            text = (pattern.get("text") or "").strip()
+            if not text:
+                continue
+            hashed = evidence_hash(evidence)
+            if hashed in existing_hashes:
+                continue
+            action = apply_synthesize(
+                memory,
+                text=text,
+                evidence_ids=evidence,
+                user_id=user_id,
+                pass_id=pass_id,
+                reason=pattern.get("reason"),
+            )
+            applied.append(action)
+            new_pattern_ids.append(action.get("id"))
+            existing_hashes.add(hashed)
+            stats["synthesized"] += 1
+            stats["created"] += 1
+
+            # Coverage pass: archive source memories fully absorbed by the new
+            # pattern. A separate conservative LLM judgement per pattern; any
+            # source with unique details is kept. Off by default.
+            if absorb_enabled():
+                _run_absorb_for_pattern(
+                    memory, text, pattern, evidence, by_real_id,
+                    action.get("id"), pass_id, stats, applied,
+                )
+
+    # Pattern governance: retire old patterns fully covered by new ones.
+    if new_pattern_ids:
+        try:
+            applied.extend(_govern_patterns(
+                memory, items, new_pattern_ids, user_id, pass_id, stats))
+        except Exception as e:
+            logger.warning("Pattern governance failed: %s", e)
+            stats["pattern_governance_failed"] = stats.get("pattern_governance_failed", 0) + 1
+    return applied
+
+
+def _run_absorb_for_pattern(
+    memory, text: str, pattern: Dict[str, Any], evidence: List[str],
+    by_real_id: Dict[str, Dict[str, Any]], new_id: Optional[str],
+    pass_id: str, stats: Dict[str, int], applied: List[Dict[str, Any]],
+) -> None:
+    sources = [
+        {"id": str(idx), "memory": _memory_text(by_real_id[rid])}
+        for idx, rid in zip(pattern.get("evidence_ids") or [], evidence)
+        if rid in by_real_id
+    ]
+    if len(sources) < 2:
+        return
+    try:
+        judged = _llm_json(
+            memory,
+            SYNTHESIS_COVERAGE_SYSTEM_PROMPT,
+            build_coverage_user_prompt(text, sources),
+        )
+    except Exception as e:
+        logger.warning("Synthesis coverage LLM call failed: %s", e)
+        judged = {}
+    allowed = {str(idx) for idx in pattern.get("evidence_ids") or []}
+    for j in judged.get("judgements") or []:
+        jid = str(j.get("id"))
+        verdict = j.get("verdict")
+        if jid in allowed and verdict == "absorb":
+            real_id = None
+            for idx, rid in zip(pattern.get("evidence_ids") or [], evidence):
+                if str(idx) == jid:
+                    real_id = rid
+                    break
+            if real_id and real_id in by_real_id:
+                applied.append(
+                    apply_absorb(
                         memory,
-                        SYNTHESIS_COVERAGE_SYSTEM_PROMPT,
-                        build_coverage_user_prompt(text, sources),
+                        source_id=real_id,
+                        pattern_id=new_id,
+                        pass_id=pass_id,
+                        reason=j.get("reason"),
                     )
-                except Exception as e:
-                    logger.warning("Synthesis coverage LLM call failed: %s", e)
-                    judged = {}
-                allowed = {str(idx) for idx in pattern.get("evidence_ids") or []}
-                for j in judged.get("judgements") or []:
-                    jid = str(j.get("id"))
-                    verdict = j.get("verdict")
-                    if jid in allowed and verdict == "absorb":
-                        real_id = None
-                        for idx, rid in zip(pattern.get("evidence_ids") or [], evidence):
-                            if str(idx) == jid:
-                                real_id = rid
-                                break
-                        if real_id and real_id in by_real_id:
-                            applied.append(
-                                apply_absorb(
-                                    memory,
-                                    source_id=real_id,
-                                    pattern_id=new_id,
-                                    pass_id=pass_id,
-                                    reason=j.get("reason"),
-                                )
-                            )
-                            stats["absorbed"] = stats.get("absorbed", 0) + 1
+                )
+                stats["absorbed"] = stats.get("absorbed", 0) + 1
+
+
+def _govern_patterns(
+    memory, items: List[Dict[str, Any]], new_pattern_ids: List[Optional[str]],
+    user_id: str, pass_id: str, stats: Dict[str, int],
+) -> List[Dict[str, Any]]:
+    """Retire old patterns fully covered by a newly synthesized pattern.
+
+    Pattern-on-pattern near-duplicates accumulate across synthesis rounds
+    (reworded patterns with different evidence sets bypass the evidence-hash
+    idempotency). For each new pattern, find similar existing patterns via
+    vector search and ask the LLM which ones it fully covers; covered ones
+    are archived (reversible) with absorbed_by pointing at the new pattern.
+    """
+    from governance.prompts import (
+        PATTERN_GOVERNANCE_SYSTEM_PROMPT,
+        build_pattern_governance_user_prompt,
+    )
+
+    new_ids = {str(i) for i in new_pattern_ids if i}
+    if not new_ids:
+        return []
+    old_patterns = [
+        i for i in items
+        if is_pattern_memory(i) and _memory_id(i) and str(_memory_id(i)) not in new_ids
+    ]
+    if not old_patterns:
+        return []
+    by_id = {str(_memory_id(i)): i for i in old_patterns}
+    filters = _entity_filters(user_id=user_id)
+    applied: List[Dict[str, Any]] = []
+
+    # Batch all new patterns into one governance prompt per old-pattern group.
+    # First find, via the vector store, old patterns similar to any new one.
+    candidate_pairs: Dict[str, List[str]] = {}
+    seen_pairs = set()
+    for item in items:
+        nid = _memory_id(item)
+        if not nid or str(nid) not in new_ids:
+            continue
+        text = _memory_text(item)
+        for cand in search_similar(memory, text, filters, exclude_id=nid, vector_id=nid):
+            if cand["score"] < PATTERN_DEDUP_SIMILARITY:
+                continue
+            oid = cand["id"]
+            if oid not in by_id or oid == str(nid):
+                continue
+            key = (str(nid), oid)
+            if key in seen_pairs:
+                continue
+            seen_pairs.add(key)
+            candidate_pairs.setdefault(str(nid), []).append(oid)
+
+    if not candidate_pairs:
+        return []
+
+    for nid, oids in candidate_pairs.items():
+        new_text = None
+        for item in items:
+            if str(_memory_id(item)) == nid:
+                new_text = _memory_text(item)
+                break
+        if not new_text:
+            continue
+        old_rows = [
+            {"id": str(idx), "memory": _memory_text(by_id[oid])}
+            for idx, oid in enumerate(oids)
+        ]
+        try:
+            judged = _llm_json(
+                memory,
+                PATTERN_GOVERNANCE_SYSTEM_PROMPT,
+                build_pattern_governance_user_prompt(new_text, old_rows),
+            )
+        except Exception as e:
+            logger.warning("Pattern governance LLM call failed: %s", e)
+            continue
+        for j in judged.get("judgements") or []:
+            jid = str(j.get("id"))
+            if j.get("verdict") != "absorb" or jid not in {r["id"] for r in old_rows}:
+                continue
+            old_real_id = oids[int(jid)] if jid.isdigit() and int(jid) < len(oids) else None
+            if not old_real_id:
+                continue
+            applied.append(
+                apply_absorb(
+                    memory,
+                    source_id=old_real_id,
+                    pattern_id=nid,
+                    pass_id=pass_id,
+                    reason=j.get("reason"),
+                )
+            )
+            stats["patterns_absorbed"] = stats.get("patterns_absorbed", 0) + 1
     return applied
 
 
