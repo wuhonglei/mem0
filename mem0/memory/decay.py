@@ -41,7 +41,13 @@ DECAY_CURVES = {
     CATEGORY_PERSONAL_CORE: (0.9, 365.0),
     CATEGORY_PREFERENCES: (0.85, 180.0),
     CATEGORY_INTERESTS: (0.8, 90.0),
-    CATEGORY_STATE: (0.3, 14.0),
+    # state holds in-progress plans, and the queries that ask about them
+    # ("what am I working on", "how did that interview go") are precisely the
+    # ones a 14-day half-life punishes: measured, the best state memory fell
+    # from rank 1-2 to outside the top 10 in 10 of 23 regression queries, and
+    # the category-blind control kept it at 2-7. Keep state mid-lived instead —
+    # still the fastest curve, but no longer a cliff under its own queries.
+    CATEGORY_STATE: (0.5, 45.0),
     CATEGORY_KNOWLEDGE: (0.3, 30.0),
     CATEGORY_MISC: (0.5, 60.0),
 }
@@ -52,6 +58,7 @@ DEFAULT_ACCESS_LOG_MAX = 20
 
 ENV_DECAY_MODE = "MEM0_DECAY_MODE"
 ENV_ACCESS_LOG_MAX = "MEM0_DECAY_ACCESS_LOG_MAX"
+ENV_DECAY_STRENGTH = "MEM0_DECAY_STRENGTH"
 
 
 def decay_mode() -> str:
@@ -79,6 +86,37 @@ def should_apply_scaling(override: Optional[bool] = None) -> bool:
     if override is True:
         return True
     return decay_mode() == DECAY_MODE_ENFORCE
+
+
+def decay_strength() -> float:
+    """How much of the decay deviation to apply, in [0, 1].
+
+    ``1.0`` is the full bias; lower values keep the ordering pressure but
+    compress it, which is how the effect gets tuned against the 10-30 %
+    perturbation budget instead of flipping enforce on and off.
+    """
+    raw = os.environ.get(ENV_DECAY_STRENGTH)
+    if raw is None or raw == "":
+        return 1.0
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        logger.warning("Invalid %s=%r; falling back to 1.0", ENV_DECAY_STRENGTH, raw)
+        return 1.0
+    if not 0.0 <= value <= 1.0:
+        clamped = min(1.0, max(0.0, value))
+        logger.warning("Out-of-range %s=%r; clamping to %s", ENV_DECAY_STRENGTH, raw, clamped)
+        return clamped
+    return value
+
+
+def apply_strength(scale: float, strength: Optional[float] = None) -> float:
+    """Compress a scaling factor's deviation from 1.0 by the configured strength.
+
+    ``1 + a * (scale - 1)``: a=1 is the raw curve, a=0 leaves relevance alone.
+    """
+    alpha = decay_strength() if strength is None else strength
+    return 1.0 + alpha * (scale - 1.0)
 
 
 def should_record_access(override: Optional[bool] = None, mode: Optional[str] = None) -> bool:
@@ -221,18 +259,24 @@ def apply_decay_rerank(
 ) -> List[Dict[str, Any]]:
     """Multiply combined scores by decay, sort on the unclamped product, then clamp."""
     now = now or datetime.now(timezone.utc)
+    strength = decay_strength()
     working = list(scored or [])
     for row in working:
-        scale = decay_scaling(row.get("payload"), now=now)
-        row["_decay_scale"] = scale
+        curve = decay_scaling(row.get("payload"), now=now)
+        scale = apply_strength(curve, strength)
+        row["_decay_scale"] = curve
+        row["_decay_effective"] = scale
         row["score"] = float(row.get("score") or 0.0) * scale
 
     working.sort(key=lambda item: item.get("score") or 0.0, reverse=True)
     trimmed = working[:limit]
     for row in trimmed:
         scale = row.pop("_decay_scale", 1.0)
+        effective = row.pop("_decay_effective", scale)
         if explain:
             details = row.setdefault("score_details", {})
             details["decay_scale"] = scale
+            details["decay_effective_scale"] = effective
+            details["decay_strength"] = strength
         row["score"] = min(float(row["score"]), 1.0)
     return trimmed

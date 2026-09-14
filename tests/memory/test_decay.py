@@ -21,6 +21,8 @@ from mem0.memory.decay import (
     apply_decay_rerank,
     decay_mode,
     decay_scaling,
+    decay_strength,
+    apply_strength,
     finalize_search_scores,
     record_access,
     search_rank_pool_size,
@@ -304,3 +306,79 @@ class TestFinalizeSearch:
         monkeypatch.setenv("MEM0_DECAY_MODE", DECAY_MODE_OFF)
         assert search_rank_pool_size(10, 60, None) == 10
         assert search_rank_pool_size(10, 60, True) == 60
+
+
+class TestStateCurve:
+    """state holds in-progress plans, so it must not decay faster than the
+    queries that ask about them can tolerate."""
+
+    def test_state_outscores_knowledge_at_the_same_age(self):
+        state = decay_scaling(_payload("state", age_days=30), now=NOW)
+        knowledge = decay_scaling(_payload(CATEGORY_KNOWLEDGE, age_days=30), now=NOW)
+        assert state > knowledge
+
+    def test_month_old_state_is_still_near_full_weight(self):
+        scale = decay_scaling(_payload("state", age_days=30), now=NOW)
+        assert scale > 0.95
+
+    def test_state_is_still_mid_lived_not_durable(self):
+        """Relaxed, not abolished: state must decay faster than the durable
+        categories (personal_core / preferences / interests)."""
+        state = DECAY_CURVES["state"]
+        for category in (CATEGORY_PERSONAL_CORE, "preferences", "interests"):
+            assert state <= DECAY_CURVES[category], category
+        assert state[1] < DECAY_CURVES["interests"][1]
+
+
+class TestStrength:
+    def test_default_is_full_strength(self, monkeypatch):
+        monkeypatch.delenv("MEM0_DECAY_STRENGTH", raising=False)
+        assert decay_strength() == 1.0
+
+    def test_reads_env(self, monkeypatch):
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", "0.4")
+        assert decay_strength() == pytest.approx(0.4)
+
+    def test_invalid_value_falls_back(self, monkeypatch):
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", "banana")
+        assert decay_strength() == 1.0
+
+    @pytest.mark.parametrize("raw,expected", [("1.5", 1.0), ("-2", 0.0)])
+    def test_out_of_range_is_clamped(self, monkeypatch, raw, expected):
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", raw)
+        assert decay_strength() == pytest.approx(expected)
+
+    def test_compresses_the_deviation_from_one(self):
+        assert apply_strength(0.3, 0.0) == pytest.approx(1.0)
+        assert apply_strength(1.5, 0.0) == pytest.approx(1.0)
+        assert apply_strength(0.3, 0.5) == pytest.approx(0.65)
+        assert apply_strength(1.5, 0.5) == pytest.approx(1.25)
+        assert apply_strength(0.3, 1.0) == pytest.approx(0.3)
+
+    def test_zero_strength_preserves_the_relevance_order(self, monkeypatch):
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", "0")
+        rows = deepcopy(_candidates())
+        expected = [row["id"] for row in sorted(rows, key=lambda r: r["score"], reverse=True)]
+        ranked = apply_decay_rerank(rows, now=NOW, limit=10)
+        assert [row["id"] for row in ranked] == expected
+
+    def test_lower_strength_stays_closer_to_the_relevance_order(self, monkeypatch):
+        def distance_from_relevance(alpha):
+            monkeypatch.setenv("MEM0_DECAY_STRENGTH", str(alpha))
+            rows = deepcopy(_candidates())
+            baseline = [row["id"] for row in
+                        sorted(deepcopy(rows), key=lambda r: r["score"], reverse=True)]
+            ranked = [row["id"] for row in apply_decay_rerank(rows, now=NOW, limit=10)]
+            return sum(1 for a, b in zip(baseline, ranked) if a != b)
+
+        assert distance_from_relevance(0.2) <= distance_from_relevance(1.0)
+
+    def test_explain_reports_curve_effective_scale_and_strength(self, monkeypatch):
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", "0.5")
+        rows = apply_decay_rerank(deepcopy(_candidates()), now=NOW, limit=3, explain=True)
+        details = rows[0]["score_details"]
+        assert details["decay_strength"] == pytest.approx(0.5)
+        assert details["decay_effective_scale"] == pytest.approx(
+            apply_strength(details["decay_scale"], 0.5))
+        assert "_decay_scale" not in rows[0]
+        assert "_decay_effective" not in rows[0]
