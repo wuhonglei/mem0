@@ -122,6 +122,9 @@ POSTGRES_COLLECTION_NAME = os.environ.get(
     "POSTGRES_COLLECTION_NAME", "memories")
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# Embedder API key: explicit MEM0_EMBEDDER_API_KEY wins, falls back to
+# OPENAI_API_KEY for backward compatibility.
+MEM0_EMBEDDER_API_KEY = os.environ.get("MEM0_EMBEDDER_API_KEY") or OPENAI_API_KEY
 HISTORY_DB_PATH = os.environ.get("HISTORY_DB_PATH", "/app/history/history.db")
 DEFAULT_LLM_MODEL = os.environ.get("MEM0_DEFAULT_LLM_MODEL", "gpt-5-mini")
 DEFAULT_EMBEDDER_MODEL = os.environ.get(
@@ -150,7 +153,7 @@ _vector_store_config: Dict[str, Any] = {
     "collection_name": POSTGRES_COLLECTION_NAME,
 }
 _embedder_config: Dict[str, Any] = {
-    "api_key": OPENAI_API_KEY,
+    "api_key": MEM0_EMBEDDER_API_KEY,
     "model": MEM0_EMBEDDER_MODEL,
 }
 if MEM0_EMBEDDER_BASE_URL:
