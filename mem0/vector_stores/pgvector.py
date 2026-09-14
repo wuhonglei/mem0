@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 from contextlib import contextmanager
 from datetime import datetime
@@ -48,6 +49,12 @@ OPERATOR_SQL_MAP = {
 }
 
 TIMESTAMP_FILTER_KEYS = frozenset({"created_at", "updated_at"})
+
+# Payload keys whose absence carries a meaning rather than "no match". Kept in
+# sync with the read semantics in ``_visibility_sql_conditions`` and
+# ``governance_filters.should_include_memory``.
+PAYLOAD_KEY_DEFAULTS = {"governance_status": "active"}
+
 RANGE_OPERATORS = frozenset({"gt", "gte", "lt", "lte"})
 TIMESTAMP_RANGE_SQL = {
     "gt": "(payload->>%s)::timestamptz > %s",
@@ -92,6 +99,21 @@ def _operator_sql(key: str, op: str) -> tuple[str, bool]:
     if op not in OPERATOR_SQL_MAP:
         raise ValueError(f"Unsupported filter operator: {op}")
     return OPERATOR_SQL_MAP[op]
+
+
+def _with_key_default(fragment: str, key: str) -> str:
+    """Honour a key's implicit default when a caller filters on it.
+
+    ``governance_status`` is absent on memories that were never touched by the
+    governance layer, and the read path treats absent as ``active``
+    (``_visibility_sql_conditions``, ``governance_filters.should_include_memory``).
+    A raw equality filter would instead drop every one of those rows, so the
+    payload LHS of the fragment is wrapped in COALESCE for such keys.
+    """
+    default = PAYLOAD_KEY_DEFAULTS.get(key)
+    if default is None or "payload->>%s" not in fragment:
+        return fragment
+    return fragment.replace("payload->>%s", f"COALESCE(payload->>%s, '{default}')", 1)
 
 
 def _append_range_condition(conditions: list, params: list, key: str, op: str, op_value: Any) -> None:
@@ -164,14 +186,14 @@ def _build_filter_conditions(filters):
                             f"Filter operator {op!r} for key {key!r} requires a list value, got {type(op_value).__name__}"
                         )
                     str_list = [str(v) for v in op_value]
-                    conditions.append(template)
+                    conditions.append(_with_key_default(template, key))
                     params.extend([key, str_list])
                 elif op in ("contains", "icontains"):
                     escaped = str(op_value).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-                    conditions.append(template + " ESCAPE '\\'")
+                    conditions.append(_with_key_default(template, key) + " ESCAPE '\\'")
                     params.extend([key, f"%{escaped}%"])
                 else:
-                    conditions.append(template)
+                    conditions.append(_with_key_default(template, key))
                     if is_numeric:
                         params.extend([key, float(op_value)])
                     else:
@@ -180,13 +202,13 @@ def _build_filter_conditions(filters):
             if key == "memory_kind":
                 conditions.append("COALESCE(payload->>%s, '') = ANY(%s)")
             else:
-                conditions.append("payload->>%s = ANY(%s)")
+                conditions.append(_with_key_default("payload->>%s = ANY(%s)", key))
             params.extend([key, [str(v) for v in value]])
         else:
             if key == "memory_kind":
                 conditions.append("COALESCE(payload->>%s, '') = %s")
             else:
-                conditions.append("payload->>%s = %s")
+                conditions.append(_with_key_default("payload->>%s = %s", key))
             if isinstance(value, bool):
                 params.extend([key, json.dumps(value)])
             else:
@@ -305,7 +327,35 @@ def _coerce_vector(value: Any) -> Optional[List[float]]:
     return None
 
 
+ENV_FILTERED_RECALL = "MEM0_PGVECTOR_FILTERED_RECALL"
+VALID_FILTERED_RECALL_MODES = frozenset({"auto", "iterative", "seqscan", "off"})
+# iterative scan keeps probing the HNSW graph until enough rows survive the
+# filter; a larger beam is the cheap part of that trade.
+ITERATIVE_SCAN_EF_SEARCH = 200
+
+
+def filtered_recall_mode() -> str:
+    """How filtered vector searches protect their recall. ``auto`` detects the
+    pgvector version and picks iterative scan (>= 0.8) or a sequential scan."""
+    raw = (os.environ.get(ENV_FILTERED_RECALL) or "auto").strip().lower()
+    if raw not in VALID_FILTERED_RECALL_MODES:
+        logger.warning("Invalid %s=%r; falling back to auto", ENV_FILTERED_RECALL, raw)
+        return "auto"
+    return raw
+
+
 class PGVector(VectorStoreBase):
+    """PostgreSQL + pgvector vector store.
+
+    Filtered vector search needs a recall guard: an HNSW scan applies the
+    payload filter *after* the index scan, so a selective filter can return
+    far fewer rows than ``top_k`` (measured 0 rows at ``hnsw.ef_search=40``
+    for a 13 %-selective filter, against 240 rows on the equivalent sequential
+    scan). ``_apply_filtered_recall_settings`` runs the matching remedy on the
+    search statement's transaction: iterative scan on pgvector >= 0.8, a
+    sequential-scan plan on older releases.
+    """
+
     def __init__(
         self,
         dbname,
@@ -348,6 +398,8 @@ class PGVector(VectorStoreBase):
         self.embedding_model_dims = embedding_model_dims
         self.connection_pool = None
         self._collection_ensured = False
+        # Recall-guard state for filtered vector search (see class docstring).
+        self._filtered_recall_probe = None
 
         # Connection setup with priority: connection_pool > connection_string > individual parameters
         if connection_pool is not None:
@@ -420,6 +472,74 @@ class PGVector(VectorStoreBase):
     def _col(self) -> "sql.Identifier":
         """Return a safely-quoted SQL identifier for the collection table."""
         return sql.Identifier(self.collection_name)
+
+    def _has_hnsw_index(self, cur) -> bool:
+        """Whether this collection is served by an HNSW index (cached)."""
+        if self._filtered_recall_probe is None:
+            try:
+                cur.execute(
+                    "SELECT 1 FROM pg_indexes WHERE lower(tablename) = lower(%s) "
+                    "AND indexdef ILIKE '%%USING hnsw%%' LIMIT 1",
+                    (self.collection_name,),
+                )
+                self._filtered_recall_probe = cur.fetchone() is not None
+            except Exception:
+                logger.debug("HNSW index probe failed", exc_info=True)
+                self._filtered_recall_probe = False
+        return self._filtered_recall_probe
+
+    def _supports_iterative_scan(self, cur) -> bool:
+        """pgvector >= 0.8 exposes hnsw.iterative_scan, which backfills the
+        candidates an HNSW scan drops to the payload filter."""
+        try:
+            cur.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+            row = cur.fetchone()
+        except Exception:
+            logger.debug("pgvector version probe failed", exc_info=True)
+            return False
+        if not row:
+            return False
+        match = re.match(r"(\d+)\.(\d+)", str(row[0]))
+        if not match:
+            return False
+        return (int(match.group(1)), int(match.group(2))) >= (0, 8)
+
+    def _apply_filtered_recall_settings(self, cur, top_k: Optional[int] = None) -> str:
+        """Keep a filtered vector search from silently returning almost nothing.
+
+        An HNSW scan sees no payload filter: it returns ``ef_search`` neighbours
+        and the filter is applied afterwards, so a selective filter (e.g. one
+        tenant of many) can leave 0-2 rows for a ``top_k`` of 240. Applied with
+        ``SET LOCAL`` so it lives only for this statement's transaction.
+
+        Returns the mode actually applied, for logging/tests.
+        """
+        mode = filtered_recall_mode()
+        if mode == "off" or not self._has_hnsw_index(cur):
+            return "off"
+
+        if mode in ("auto", "iterative") and self._supports_iterative_scan(cur):
+            ef_search = max(ITERATIVE_SCAN_EF_SEARCH, int(top_k or 0))
+            try:
+                cur.execute(f"SET LOCAL hnsw.ef_search = {int(ef_search)}")
+                cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
+                return "iterative"
+            except Exception:
+                logger.debug("iterative scan unavailable; falling back", exc_info=True)
+
+        if mode == "iterative":
+            return "off"
+
+        # Older pgvector: rank the filtered set without the index so the
+        # candidate pool is complete. Cheap while the table fits in memory;
+        # prefer upgrading pgvector (0.8+) for large tables.
+        try:
+            cur.execute("SET LOCAL enable_indexscan = off")
+            cur.execute("SET LOCAL enable_bitmapscan = off")
+            return "seqscan"
+        except Exception:
+            logger.debug("filtered-recall seqscan fallback failed", exc_info=True)
+            return "off"
 
     def create_col(self) -> None:
         """
@@ -514,6 +634,10 @@ class PGVector(VectorStoreBase):
         filter_clause = sql.SQL("WHERE " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
 
         with self._get_cursor() as cur:
+            if filter_conditions:
+                # Without this a filtered HNSW scan can return ~0 rows (see
+                # _apply_filtered_recall_settings).
+                self._apply_filtered_recall_settings(cur, top_k)
             cur.execute(
                 sql.SQL("""
                 SELECT id, vector <=> %s::vector AS distance, payload
