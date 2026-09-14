@@ -31,7 +31,7 @@ services:
       - MEM0_TELEMETRY=${MEM0_TELEMETRY:-true}
 
   postgres:
-    image: ankane/pgvector:v0.5.1
+    image: pgvector/pgvector:0.8.6-pg15
     restart: on-failure
     shm_size: "512mb"
     networks:
