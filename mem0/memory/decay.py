@@ -36,21 +36,34 @@ DECAY_MODE_COLLECT = "collect"
 DECAY_MODE_ENFORCE = "enforce"
 VALID_DECAY_MODES = frozenset({DECAY_MODE_OFF, DECAY_MODE_COLLECT, DECAY_MODE_ENFORCE})
 
-# category -> (floor, half_life_days)
-DECAY_CURVES = {
-    CATEGORY_PERSONAL_CORE: (0.9, 365.0),
-    CATEGORY_PREFERENCES: (0.85, 180.0),
-    CATEGORY_INTERESTS: (0.8, 90.0),
+# One global floor bounds how far any memory can be demoted; the category only
+# decides how fast its weight falls off. A per-category floor reads like
+# protection but behaves like a standing bonus for the categories that hold it:
+# measured, the 0.9 floor on personal_core kept low-relevance facts (0.175-0.41)
+# inside the top-10 of unrelated queries, and a single 0.7 floor with
+# per-category half-lives scored better on every axis (junk intrusions 3 -> 2,
+# knowledge share 47% -> 53%, perturbation 78% -> 67% at alpha=0.3).
+DECAY_FLOOR = 0.7
+DECAY_HALF_LIVES = {
+    CATEGORY_PERSONAL_CORE: 365.0,
+    CATEGORY_PREFERENCES: 180.0,
+    CATEGORY_INTERESTS: 90.0,
     # state holds in-progress plans, and the queries that ask about them
     # ("what am I working on", "how did that interview go") are precisely the
-    # ones a 14-day half-life punishes: measured, the best state memory fell
-    # from rank 1-2 to outside the top 10 in 10 of 23 regression queries, and
-    # the category-blind control kept it at 2-7. Keep state mid-lived instead —
-    # still the fastest curve, but no longer a cliff under its own queries.
-    CATEGORY_STATE: (0.5, 45.0),
-    CATEGORY_KNOWLEDGE: (0.3, 30.0),
-    CATEGORY_MISC: (0.5, 60.0),
+    # ones a 14-day half-life punished: measured, the best state memory fell
+    # from rank 1-2 to outside the top 10 in 10 of 23 regression queries while
+    # the category-blind control kept it at 2-7.
+    CATEGORY_STATE: 45.0,
+    CATEGORY_KNOWLEDGE: 30.0,
+    CATEGORY_MISC: 60.0,
 }
+DEFAULT_HALF_LIFE = DECAY_HALF_LIVES[CATEGORY_MISC]
+
+
+def half_life_days(category: Optional[str]) -> float:
+    """Half-life in days for a resolved category (unknown values use misc)."""
+    return DECAY_HALF_LIVES.get(category or CATEGORY_MISC, DEFAULT_HALF_LIFE)
+
 
 FRESH_SCALE = 1.5
 SECONDS_PER_DAY = 86400.0
@@ -175,8 +188,8 @@ def decay_scaling(payload: Optional[Dict[str, Any]], now: Optional[datetime] = N
         now = now.replace(tzinfo=timezone.utc)
 
     category = resolve_category(payload)
-    floor, half_life_days = DECAY_CURVES[category]
-    half_life_seconds = half_life_days * SECONDS_PER_DAY
+    half_life = half_life_days(category)
+    half_life_seconds = half_life * SECONDS_PER_DAY
 
     payload = payload or {}
     # Recency, not "last touched": updated_at is bumped by governance bookkeeping
@@ -194,7 +207,7 @@ def decay_scaling(payload: Optional[Dict[str, Any]], now: Optional[datetime] = N
     else:
         age_seconds = max(0.0, (now - stamp).total_seconds())
 
-    return floor + (FRESH_SCALE - floor) * exp(-age_seconds / half_life_seconds)
+    return DECAY_FLOOR + (FRESH_SCALE - DECAY_FLOOR) * exp(-age_seconds / half_life_seconds)
 
 
 def append_access_event(

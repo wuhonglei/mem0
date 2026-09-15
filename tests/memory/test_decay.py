@@ -12,13 +12,15 @@ from mem0.memory.categories import (
     resolve_category,
 )
 from mem0.memory.decay import (
-    DECAY_CURVES,
+    DECAY_FLOOR,
+    DECAY_HALF_LIVES,
     DECAY_MODE_COLLECT,
     DECAY_MODE_ENFORCE,
     DECAY_MODE_OFF,
     FRESH_SCALE,
     append_access_event,
     apply_decay_rerank,
+    half_life_days,
     decay_mode,
     decay_scaling,
     decay_strength,
@@ -52,10 +54,16 @@ class TestCurves:
         assert decay_scaling(_payload(category, age_days=0), now=NOW) == pytest.approx(FRESH_SCALE)
 
     @pytest.mark.parametrize("category", sorted(MEMORY_CATEGORIES))
-    def test_converges_to_floor(self, category):
-        floor, _ = DECAY_CURVES[category]
+    def test_converges_to_the_global_floor(self, category):
         scale = decay_scaling(_payload(category, age_days=20000), now=NOW)
-        assert scale == pytest.approx(floor, abs=1e-6)
+        assert scale == pytest.approx(DECAY_FLOOR, abs=1e-6)
+
+    @pytest.mark.parametrize("category", sorted(MEMORY_CATEGORIES))
+    def test_floor_is_shared_across_categories(self, category):
+        """A per-category floor acts as a standing bonus, not as protection."""
+        assert half_life_days(category) in DECAY_HALF_LIVES.values()
+        oldest = decay_scaling(_payload(category, age_days=100000), now=NOW)
+        assert oldest == pytest.approx(DECAY_FLOOR, abs=1e-6)
 
     @pytest.mark.parametrize("category", sorted(MEMORY_CATEGORIES))
     def test_monotonic_decreasing(self, category):
@@ -65,16 +73,14 @@ class TestCurves:
 
     def test_personal_core_at_one_half_life_stays_above_floor(self):
         scale = decay_scaling(_payload(CATEGORY_PERSONAL_CORE, age_days=365), now=NOW)
-        floor, _ = DECAY_CURVES[CATEGORY_PERSONAL_CORE]
         assert scale > 0.9
-        assert scale > floor
+        assert scale > DECAY_FLOOR
         assert scale < FRESH_SCALE
 
     def test_knowledge_at_three_half_lives_near_floor(self):
         scale = decay_scaling(_payload(CATEGORY_KNOWLEDGE, age_days=90), now=NOW)
-        floor, _ = DECAY_CURVES[CATEGORY_KNOWLEDGE]
-        assert scale == pytest.approx(floor, abs=0.07)
-        assert scale < 0.4
+        assert scale == pytest.approx(DECAY_FLOOR, abs=0.05)
+        assert scale < 0.75
 
 
 class TestFallback:
@@ -324,10 +330,9 @@ class TestStateCurve:
     def test_state_is_still_mid_lived_not_durable(self):
         """Relaxed, not abolished: state must decay faster than the durable
         categories (personal_core / preferences / interests)."""
-        state = DECAY_CURVES["state"]
+        state = DECAY_HALF_LIVES["state"]
         for category in (CATEGORY_PERSONAL_CORE, "preferences", "interests"):
-            assert state <= DECAY_CURVES[category], category
-        assert state[1] < DECAY_CURVES["interests"][1]
+            assert state < DECAY_HALF_LIVES[category], category
 
 
 class TestStrength:
@@ -393,8 +398,7 @@ class TestFreshnessSignal:
         payload["created_at"] = payload.pop("updated_at")
         payload["updated_at"] = NOW.isoformat()  # merge/archive just touched it
         scale = decay_scaling(payload, now=NOW)
-        floor, _ = DECAY_CURVES[CATEGORY_KNOWLEDGE]
-        assert scale == pytest.approx(floor, abs=0.01)
+        assert scale == pytest.approx(DECAY_FLOOR, abs=0.01)
 
     def test_content_edit_is_used_when_present(self):
         payload = {
