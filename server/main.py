@@ -208,6 +208,12 @@ For each memory, output a "category" field that is exactly one of:
 - misc: everything else, including leftover time-sensitive scraps
 
 Decide how long the fact stays true before deciding its topic. Prefer misc over a high-stakes mislabel (never guess personal_core).
+
+personal_core means an identity, family or health fact ABOUT THE USER (name, birth, family, residence, allergies, medical). Never label these personal_core:
+- content the assistant authored (advice, explanations, plans, product or news details) — a fact about the user cannot come from the assistant's own words;
+- a record of the user asking or being told something ("用户询问了…", "助手建议…");
+- a fact about a third party or a company ("X公司提供…", "某某出生于…").
+Those are preferences (user's own stable stance) or knowledge (reference information).
 """
 
 DEFAULT_CONFIG = {
