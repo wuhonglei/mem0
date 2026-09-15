@@ -1408,3 +1408,33 @@ def test_search_enforce_promotes_fresh_knowledge(mocker, monkeypatch):
     assert [row["id"] for row in on][0] == "fresh"
 
 
+
+
+def test_content_update_stamps_content_updated_at(mocker):
+    """A content edit is the only thing that makes a memory fresher; decay reads
+    this stamp, because updated_at is also bumped by governance bookkeeping."""
+    memory = _build_memory_instance(mocker, Memory)
+    memory.vector_store.get.return_value = MagicMock(payload=dict(_EXISTING_UPDATE_PAYLOAD))
+
+    memory._update_memory("memory-id", "new memory", {})
+
+    payload = memory.vector_store.update.call_args.kwargs["payload"]
+    assert payload["content_updated_at"] == payload["updated_at"]
+    assert payload["content_updated_at"] > "2026-01-01"
+
+
+def test_metadata_only_update_leaves_content_updated_at_alone(mocker):
+    """Merge / supersede / archive pass no data: the fact did not change, so the
+    memory must not look recent to decay."""
+    memory = _build_memory_instance(mocker, Memory)
+    existing = dict(_EXISTING_UPDATE_PAYLOAD)
+    existing["content_updated_at"] = "2026-05-01T00:00:00+00:00"
+    memory.vector_store.get.return_value = MagicMock(payload=existing)
+
+    memory._update_memory("memory-id", None, {},
+                          metadata={"governance_status": "merged", "merged_into": "other"})
+
+    payload = memory.vector_store.update.call_args.kwargs["payload"]
+    assert payload["content_updated_at"] == "2026-05-01T00:00:00+00:00"
+    assert payload["governance_status"] == "merged"
+    assert payload["updated_at"] != payload["content_updated_at"]

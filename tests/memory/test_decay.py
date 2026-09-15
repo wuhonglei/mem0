@@ -382,3 +382,48 @@ class TestStrength:
             apply_strength(details["decay_scale"], 0.5))
         assert "_decay_scale" not in rows[0]
         assert "_decay_effective" not in rows[0]
+
+
+class TestFreshnessSignal:
+    """updated_at is bumped by governance bookkeeping, not only by content edits,
+    so it must not make an untouched old memory look fresh."""
+
+    def test_governance_touch_does_not_refresh_a_memory(self):
+        payload = _payload(CATEGORY_KNOWLEDGE, age_days=365, last_accessed=False)
+        payload["created_at"] = payload.pop("updated_at")
+        payload["updated_at"] = NOW.isoformat()  # merge/archive just touched it
+        scale = decay_scaling(payload, now=NOW)
+        floor, _ = DECAY_CURVES[CATEGORY_KNOWLEDGE]
+        assert scale == pytest.approx(floor, abs=0.01)
+
+    def test_content_edit_is_used_when_present(self):
+        payload = {
+            "category": CATEGORY_KNOWLEDGE,
+            "created_at": (NOW - timedelta(days=365)).isoformat(),
+            "updated_at": (NOW - timedelta(days=365)).isoformat(),
+            "content_updated_at": NOW.isoformat(),
+        }
+        assert decay_scaling(payload, now=NOW) == pytest.approx(FRESH_SCALE)
+
+    def test_access_beats_content_and_creation(self):
+        payload = {
+            "category": CATEGORY_KNOWLEDGE,
+            "created_at": (NOW - timedelta(days=365)).isoformat(),
+            "content_updated_at": (NOW - timedelta(days=200)).isoformat(),
+            "last_accessed_at": NOW.isoformat(),
+        }
+        assert decay_scaling(payload, now=NOW) == pytest.approx(FRESH_SCALE)
+
+    def test_creation_time_is_the_fallback(self):
+        payload = {
+            "category": CATEGORY_MISC,
+            "created_at": (NOW - timedelta(days=60)).isoformat(),
+            "updated_at": NOW.isoformat(),
+        }
+        assert decay_scaling(payload, now=NOW) == pytest.approx(
+            decay_scaling({"category": CATEGORY_MISC, "updated_at": (NOW - timedelta(days=60)).isoformat()},
+                          now=NOW))
+
+    def test_updated_at_survives_only_as_a_last_resort(self):
+        payload = {"category": CATEGORY_MISC, "updated_at": NOW.isoformat()}
+        assert decay_scaling(payload, now=NOW) == pytest.approx(FRESH_SCALE)

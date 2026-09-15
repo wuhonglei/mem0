@@ -2426,6 +2426,12 @@ class Memory(MemoryBase):
         new_metadata["text_lemmatized"] = lemmatize_for_bm25(data)
         new_metadata["created_at"] = existing_memory.payload.get("created_at")
         new_metadata["updated_at"] = datetime.now(timezone.utc).isoformat()
+        if text_changed:
+            # Separate "the fact changed" from "governance touched the row":
+            # only a content edit makes the memory fresher. Merge / supersede /
+            # archive updates pass no data, so they land here with text_changed
+            # False and leave this stamp alone (decay reads it).
+            new_metadata["content_updated_at"] = new_metadata["updated_at"]
 
         if data in existing_embeddings:
             embeddings = existing_embeddings[data]
@@ -4281,6 +4287,12 @@ class AsyncMemory(MemoryBase):
         new_metadata["text_lemmatized"] = lemmatize_for_bm25(data)
         new_metadata["created_at"] = existing_memory.payload.get("created_at")
         new_metadata["updated_at"] = datetime.now(timezone.utc).isoformat()
+        if text_changed:
+            # Separate "the fact changed" from "governance touched the row":
+            # only a content edit makes the memory fresher. Merge / supersede /
+            # archive updates pass no data, so they land here with text_changed
+            # False and leave this stamp alone (decay reads it).
+            new_metadata["content_updated_at"] = new_metadata["updated_at"]
 
         if data in existing_embeddings:
             embeddings = existing_embeddings[data]

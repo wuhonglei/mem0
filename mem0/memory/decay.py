@@ -179,7 +179,16 @@ def decay_scaling(payload: Optional[Dict[str, Any]], now: Optional[datetime] = N
     half_life_seconds = half_life_days * SECONDS_PER_DAY
 
     payload = payload or {}
-    stamp = _parse_timestamp(payload.get("last_accessed_at") or payload.get("updated_at"))
+    # Recency, not "last touched": updated_at is bumped by governance bookkeeping
+    # (merge / supersede / archive) as well as by content edits, so on this store
+    # 1326 of 1327 UPDATE events changed no text at all. Prefer the access log,
+    # then the last content edit, then creation.
+    stamp = _parse_timestamp(
+        payload.get("last_accessed_at")
+        or payload.get("content_updated_at")
+        or payload.get("created_at")
+        or payload.get("updated_at")
+    )
     if stamp is None:
         age_seconds = 0.0
     else:
