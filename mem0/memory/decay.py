@@ -5,6 +5,16 @@ add / get_all semantics. Access bookkeeping writes payload fields directly
 on the vector store so Memory.update (re-embed + history + updated_at) is
 not on the hot path.
 
+Two independent signals, multiplied (capped at FRESH_SCALE):
+
+* validity — how old the *content* is against the category's half-life. This
+  is the staleness signal: a fact goes stale on its own schedule, whether or
+  not anyone asks about it. The demotion is bounded by one global
+  ``DECAY_FLOOR`` shared by every category.
+* attention — how recently the memory was *used*. Boost-only (1.0 - 1.5) and
+  exactly 1.0 when there is no access history, so "never retrieved" is read as
+  "no evidence", not as "ancient".
+
 Category values come from ``mem0.memory.categories``. This module only maps
 those values onto decay curves.
 """
@@ -72,6 +82,11 @@ DEFAULT_ACCESS_LOG_MAX = 20
 ENV_DECAY_MODE = "MEM0_DECAY_MODE"
 ENV_ACCESS_LOG_MAX = "MEM0_DECAY_ACCESS_LOG_MAX"
 ENV_DECAY_STRENGTH = "MEM0_DECAY_STRENGTH"
+ENV_ATTENTION_STRENGTH = "MEM0_DECAY_ATTENTION_STRENGTH"
+ENV_ATTENTION_HALF_LIFE = "MEM0_DECAY_ATTENTION_HALF_LIFE"
+
+DEFAULT_ATTENTION_STRENGTH = 1.0
+DEFAULT_ATTENTION_HALF_LIFE_DAYS = 45.0
 
 
 def decay_mode() -> str:
@@ -130,6 +145,58 @@ def apply_strength(scale: float, strength: Optional[float] = None) -> float:
     """
     alpha = decay_strength() if strength is None else strength
     return 1.0 + alpha * (scale - 1.0)
+
+
+def attention_strength() -> float:
+    """How strongly recent *use* lifts a memory, in [0, 1] (default 0.5)."""
+    return _bounded_env_float(
+        ENV_ATTENTION_STRENGTH, DEFAULT_ATTENTION_STRENGTH, low=0.0, high=1.0)
+
+
+def attention_half_life_days() -> float:
+    """Half-life of the attention term, in days (default 45)."""
+    return _bounded_env_float(
+        ENV_ATTENTION_HALF_LIFE, DEFAULT_ATTENTION_HALF_LIFE_DAYS, low=1.0, high=3650.0)
+
+
+def _bounded_env_float(name: str, default: float, *, low: float, high: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        logger.warning("Invalid %s=%r; falling back to %s", name, raw, default)
+        return default
+    if not low <= value <= high:
+        clamped = min(high, max(low, value))
+        logger.warning("Out-of-range %s=%r; clamping to %s", name, raw, clamped)
+        return clamped
+    return value
+
+
+def attention_factor(payload: Optional[Dict[str, Any]], now: Optional[datetime] = None) -> float:
+    """How recently the memory was *used*, as a multiplier in [1.0, 1.5].
+
+    Absence of access history is neutral, not staleness: only ~1.5 % of this
+    store has ever been retrieved, and reading "never retrieved" as "ancient"
+    would demote almost everything for a reason that says nothing about the
+    memory. The term is also boost-only — a stale access timestamp never pushes
+    a memory down, it just stops helping it, which avoids demoting a memory
+    twice (once for old content, once for old use).
+    """
+    if not payload:
+        return 1.0
+    stamp = _parse_timestamp(payload.get("last_accessed_at"))
+    if stamp is None:
+        return 1.0
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    age_seconds = max(0.0, (now - stamp).total_seconds())
+    curve = DECAY_FLOOR + (FRESH_SCALE - DECAY_FLOOR) * exp(
+        -age_seconds / (attention_half_life_days() * SECONDS_PER_DAY))
+    return max(1.0, 1.0 + attention_strength() * (curve - 1.0))
 
 
 def should_record_access(override: Optional[bool] = None, mode: Optional[str] = None) -> bool:
@@ -192,13 +259,11 @@ def decay_scaling(payload: Optional[Dict[str, Any]], now: Optional[datetime] = N
     half_life_seconds = half_life * SECONDS_PER_DAY
 
     payload = payload or {}
-    # Recency, not "last touched": updated_at is bumped by governance bookkeeping
-    # (merge / supersede / archive) as well as by content edits, so on this store
-    # 1326 of 1327 UPDATE events changed no text at all. Prefer the access log,
-    # then the last content edit, then creation.
+    # Content age only: whether the fact still holds. Recency of *use* is a
+    # separate term (attention_factor) — conflating the two is what let
+    # governance bookkeeping and missing access history decide staleness.
     stamp = _parse_timestamp(
-        payload.get("last_accessed_at")
-        or payload.get("content_updated_at")
+        payload.get("content_updated_at")
         or payload.get("created_at")
         or payload.get("updated_at")
     )
@@ -208,6 +273,25 @@ def decay_scaling(payload: Optional[Dict[str, Any]], now: Optional[datetime] = N
         age_seconds = max(0.0, (now - stamp).total_seconds())
 
     return DECAY_FLOOR + (FRESH_SCALE - DECAY_FLOOR) * exp(-age_seconds / half_life_seconds)
+
+
+def decay_multiplier(
+    payload: Optional[Dict[str, Any]],
+    now: Optional[datetime] = None,
+    *,
+    strength: Optional[float] = None,
+) -> float:
+    """The full ranking multiplier: validity x attention, capped at FRESH_SCALE.
+
+    Validity answers "does the fact still hold" (content age x category
+    half-life); attention answers "was it used lately" and is exactly 1.0 when
+    there is no access history. The product is capped so the ceiling stays the
+    documented 1.5x: attention redistributes weight below the ceiling, it never
+    inflates past it.
+    """
+    now = now or datetime.now(timezone.utc)
+    validity = apply_strength(decay_scaling(payload, now=now), strength)
+    return min(FRESH_SCALE, validity * attention_factor(payload, now=now))
 
 
 def append_access_event(
@@ -282,23 +366,29 @@ def apply_decay_rerank(
     """Multiply combined scores by decay, sort on the unclamped product, then clamp."""
     now = now or datetime.now(timezone.utc)
     strength = decay_strength()
+    attention = attention_strength()
     working = list(scored or [])
     for row in working:
         curve = decay_scaling(row.get("payload"), now=now)
         scale = apply_strength(curve, strength)
+        boost = attention_factor(row.get("payload"), now=now)
         row["_decay_scale"] = curve
         row["_decay_effective"] = scale
-        row["score"] = float(row.get("score") or 0.0) * scale
+        row["_decay_attention"] = boost
+        row["score"] = float(row.get("score") or 0.0) * scale * boost
 
     working.sort(key=lambda item: item.get("score") or 0.0, reverse=True)
     trimmed = working[:limit]
     for row in trimmed:
         scale = row.pop("_decay_scale", 1.0)
         effective = row.pop("_decay_effective", scale)
+        boost = row.pop("_decay_attention", 1.0)
         if explain:
             details = row.setdefault("score_details", {})
             details["decay_scale"] = scale
             details["decay_effective_scale"] = effective
+            details["decay_attention"] = boost
             details["decay_strength"] = strength
+            details["decay_attention_strength"] = attention
         row["score"] = min(float(row["score"]), 1.0)
     return trimmed

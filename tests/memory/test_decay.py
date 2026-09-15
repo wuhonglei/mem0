@@ -2,6 +2,8 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import math
+
 import pytest
 
 from mem0.memory.categories import (
@@ -20,6 +22,10 @@ from mem0.memory.decay import (
     FRESH_SCALE,
     append_access_event,
     apply_decay_rerank,
+    attention_factor,
+    attention_half_life_days,
+    attention_strength,
+    decay_multiplier,
     half_life_days,
     decay_mode,
     decay_scaling,
@@ -35,14 +41,17 @@ from mem0.memory.decay import (
 NOW = datetime(2026, 9, 9, 12, 0, tzinfo=timezone.utc)
 
 
-def _payload(category, *, age_days=None, last_accessed=True, extra=None):
+def _payload(category, *, age_days=None, last_accessed=True, extra=None, access_age_days=None):
+    """A memory whose content is `age_days` old and which was last used
+    `access_age_days` ago (defaults to the same age, i.e. never used since)."""
     payload = {"category": category, "data": "x"}
     if age_days is not None:
-        stamp = (NOW - timedelta(days=age_days)).isoformat()
+        payload["created_at"] = (NOW - timedelta(days=age_days)).isoformat()
+        payload["content_updated_at"] = payload["created_at"]
+    if age_days is not None or access_age_days is not None:
         if last_accessed:
-            payload["last_accessed_at"] = stamp
-        else:
-            payload["updated_at"] = stamp
+            days = age_days if access_age_days is None else access_age_days
+            payload["last_accessed_at"] = (NOW - timedelta(days=days)).isoformat()
     if extra:
         payload.update(extra)
     return payload
@@ -165,12 +174,21 @@ class TestRerank:
         original = [row["id"] for row in sorted(_candidates(), key=lambda r: r["score"], reverse=True)]
         assert original == ["stale-knowledge", "fresh-knowledge", "core"]
 
-    def test_enforce_promotes_fresh_and_protects_core(self):
+    def test_durable_facts_are_protected_by_their_half_life_not_a_floor(self):
+        """With one global floor the protection a durable fact gets is its long
+        half-life, not a category-specific floor: core (365 d) keeps its weight
+        where 90-day-old knowledge has already sunk to the floor."""
         ranked = apply_decay_rerank(deepcopy(_candidates()), now=NOW, limit=3)
         ids = [row["id"] for row in ranked]
         assert ids[0] == "fresh-knowledge"
         assert ids[-1] == "stale-knowledge"
         assert "core" in ids
+
+    def test_recent_use_keeps_an_old_durable_fact_in_front(self):
+        rows = _candidates()
+        rows[2]["payload"]["last_accessed_at"] = NOW.isoformat()  # core was just asked about
+        ids = [row["id"] for row in apply_decay_rerank(deepcopy(rows), now=NOW, limit=3)]
+        assert ids.index("core") < ids.index("stale-knowledge")
 
     def test_public_score_clamped_to_one(self):
         ranked = apply_decay_rerank(
@@ -362,6 +380,7 @@ class TestStrength:
 
     def test_zero_strength_preserves_the_relevance_order(self, monkeypatch):
         monkeypatch.setenv("MEM0_DECAY_STRENGTH", "0")
+        monkeypatch.setenv("MEM0_DECAY_ATTENTION_STRENGTH", "0")
         rows = deepcopy(_candidates())
         expected = [row["id"] for row in sorted(rows, key=lambda r: r["score"], reverse=True)]
         ranked = apply_decay_rerank(rows, now=NOW, limit=10)
@@ -394,11 +413,12 @@ class TestFreshnessSignal:
     so it must not make an untouched old memory look fresh."""
 
     def test_governance_touch_does_not_refresh_a_memory(self):
-        payload = _payload(CATEGORY_KNOWLEDGE, age_days=365, last_accessed=False)
-        payload["created_at"] = payload.pop("updated_at")
-        payload["updated_at"] = NOW.isoformat()  # merge/archive just touched it
-        scale = decay_scaling(payload, now=NOW)
-        assert scale == pytest.approx(DECAY_FLOOR, abs=0.01)
+        payload = {
+            "category": CATEGORY_KNOWLEDGE,
+            "created_at": (NOW - timedelta(days=365)).isoformat(),
+            "updated_at": NOW.isoformat(),  # merge/archive just touched it
+        }
+        assert decay_scaling(payload, now=NOW) == pytest.approx(DECAY_FLOOR, abs=0.01)
 
     def test_content_edit_is_used_when_present(self):
         payload = {
@@ -409,14 +429,61 @@ class TestFreshnessSignal:
         }
         assert decay_scaling(payload, now=NOW) == pytest.approx(FRESH_SCALE)
 
-    def test_access_beats_content_and_creation(self):
+    def test_access_recency_is_a_separate_attention_term(self):
+        """A recent access must not rewrite the fact's age — it is its own term."""
+        stale = {
+            "category": CATEGORY_KNOWLEDGE,
+            "content_updated_at": (NOW - timedelta(days=365)).isoformat(),
+        }
+        accessed = {**stale, "last_accessed_at": NOW.isoformat()}
+        assert decay_scaling(accessed, now=NOW) == decay_scaling(stale, now=NOW)
+        assert decay_multiplier(accessed, now=NOW) > decay_multiplier(stale, now=NOW)
+        assert decay_multiplier(accessed, now=NOW) <= FRESH_SCALE
+
+    def test_missing_access_history_is_neutral_not_stale(self, monkeypatch):
+        """Only ~1.5 % of this store was ever retrieved; "never used" must not
+        be read as "ancient"."""
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", "1")
         payload = {
             "category": CATEGORY_KNOWLEDGE,
-            "created_at": (NOW - timedelta(days=365)).isoformat(),
-            "content_updated_at": (NOW - timedelta(days=200)).isoformat(),
-            "last_accessed_at": NOW.isoformat(),
+            "created_at": (NOW - timedelta(days=3650)).isoformat(),
         }
-        assert decay_scaling(payload, now=NOW) == pytest.approx(FRESH_SCALE)
+        assert attention_factor(payload, now=NOW) == 1.0
+        assert decay_multiplier(payload, now=NOW) == pytest.approx(DECAY_FLOOR)
+
+    def test_attention_is_boost_only(self):
+        for days in (1, 45, 90, 4000):
+            payload = {
+                "category": CATEGORY_KNOWLEDGE,
+                "created_at": (NOW - timedelta(days=365)).isoformat(),
+                "last_accessed_at": (NOW - timedelta(days=days)).isoformat(),
+            }
+            assert 1.0 <= attention_factor(payload, now=NOW) <= FRESH_SCALE
+
+    def test_attention_never_inflates_past_the_ceiling(self, monkeypatch):
+        monkeypatch.setenv("MEM0_DECAY_STRENGTH", "1")
+        payload = _payload(CATEGORY_KNOWLEDGE, age_days=0)
+        assert decay_multiplier(payload, now=NOW) == pytest.approx(FRESH_SCALE)
+        assert decay_multiplier(payload, now=NOW, strength=1.0) <= FRESH_SCALE
+
+    def test_attention_strength_is_independently_configurable(self, monkeypatch):
+        payload = _payload(CATEGORY_KNOWLEDGE, age_days=200, access_age_days=0)
+        monkeypatch.setenv("MEM0_DECAY_ATTENTION_STRENGTH", "0")
+        assert attention_factor(payload, now=NOW) == 1.0
+        monkeypatch.setenv("MEM0_DECAY_ATTENTION_STRENGTH", "0.5")
+        assert 1.0 < attention_factor(payload, now=NOW) < FRESH_SCALE
+
+    def test_attention_half_life_is_configurable(self, monkeypatch):
+        payload = _payload(CATEGORY_KNOWLEDGE, age_days=200, access_age_days=20)
+        monkeypatch.setenv("MEM0_DECAY_ATTENTION_HALF_LIFE", "45")
+        expected = DECAY_FLOOR + (FRESH_SCALE - DECAY_FLOOR) * math.exp(-20 / 45)
+        assert attention_factor(payload, now=NOW) == pytest.approx(expected, abs=0.01)
+
+    def test_invalid_attention_env_falls_back_to_defaults(self, monkeypatch, caplog):
+        monkeypatch.setenv("MEM0_DECAY_ATTENTION_STRENGTH", "nonsense")
+        monkeypatch.setenv("MEM0_DECAY_ATTENTION_HALF_LIFE", "99999")
+        assert attention_strength() == 1.0
+        assert attention_half_life_days() == 3650.0
 
     def test_creation_time_is_the_fallback(self):
         payload = {
