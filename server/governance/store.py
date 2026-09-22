@@ -1,7 +1,7 @@
 """Persist Dream pass reports into the app Postgres database."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -44,10 +44,26 @@ def persist_report(db: Session, report: Dict[str, Any]) -> None:
     db.commit()
 
 
-def list_passes(db: Session, *, user_id: Optional[str] = None, limit: int = 50) -> List[DreamPass]:
-    stmt = select(DreamPass).order_by(DreamPass.created_at.desc()).limit(limit)
+def list_passes(
+    db: Session,
+    *,
+    user_id: Optional[str] = None,
+    sources: Optional[Sequence[str]] = None,
+    limit: int = 50,
+) -> List[DreamPass]:
+    """最近若干条 pass（按 ``created_at`` 倒序）。
+
+    ``sources`` 非空时只返回 ``source`` 命中其中之一的记录：治理侧算水位只需要
+    ``source="manual"`` 的全量 pass，而写记忆触发的 ``on_add`` 轻量 consolidate
+    会把最新记录占满（实测某用户 61 条记录里最新一次全量 pass 排在第 28 位），
+    调用方要是一次只取 ``limit=1`` 就会把「刚做过合并」误读成「刚跑过全量治理」。
+    """
+    stmt = select(DreamPass)
     if user_id:
-        stmt = select(DreamPass).where(DreamPass.user_id == user_id).order_by(DreamPass.created_at.desc()).limit(limit)
+        stmt = stmt.where(DreamPass.user_id == user_id)
+    if sources:
+        stmt = stmt.where(DreamPass.source.in_(list(sources)))
+    stmt = stmt.order_by(DreamPass.created_at.desc()).limit(limit)
     return list(db.execute(stmt).scalars().all())
 
 

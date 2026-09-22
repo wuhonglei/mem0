@@ -67,10 +67,21 @@ Governance tags are written with `Memory.update(metadata=...)` only (no `text`),
 ```bash
 curl -X POST http://localhost:8888/dream \
   -H "Content-Type: application/json" \
-  -d '{"user_id": "alice", "synthesize": true}'
+  -d '{"user_id": "alice", "synthesize": true, "source": "scheduler"}'
 ```
 
+`source` is an optional label recorded on the pass (default `manual`); it is normalized to a lowercase short tag (whitespace trimmed, characters outside `a-z0-9_.:-` replaced with `_`, capped at 32 chars) so it stays usable in the `?source=` filter below. Use it to tell callers apart — a cron job that tags itself `scheduler` can later be read back with `GET /dream?source=manual,scheduler`.
+
 The server does not ship a scheduler. Call this from cron or your app. `GET /dream` lists recent passes; `GET /dream/{pass_id}` returns the action log.
+
+Each pass records a `source`: `manual` for this endpoint, `on_add` for the light consolidation that runs after a memory write (see above). The two are very different — an `on_add` pass only merges/supersedes, it never synthesizes — so a caller deciding "has this user been governed since their last memory write?" must filter to full passes, otherwise the most recent record is almost always an `on_add` and the user is skipped forever:
+
+```bash
+curl "http://localhost:8888/dream?user_id=alice&source=manual&limit=1" \
+  -H "X-API-Key: $MEM0_API_KEY"
+```
+
+`source` is repeatable or comma-separated (`?source=manual&source=api`, `?source=manual,api`); omitting it returns every source as before. In practice an `on_add` run can bury the newest full pass dozens of rows deep (measured: rank 28 of 61 for one user), so filtering server-side is also far cheaper than paging through them.
 
 Synthesis only considers memories that are all of:
 

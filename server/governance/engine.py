@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -95,6 +96,24 @@ def _empty_stats() -> Dict[str, int]:
         "superseded": 0,
         "synthesized": 0,
     }
+
+
+PASS_SOURCE_DEFAULT = "manual"
+PASS_SOURCE_MAX_LEN = 32
+_UNSAFE_SOURCE_CHARS = re.compile(r"[^a-z0-9_.:-]")
+
+
+def normalize_pass_source(source: Optional[str]) -> str:
+    """把调用方给的 pass 来源归一化成可过滤的短标签。
+
+    来源是自由标签：``manual`` = 有人调了 ``POST /dream``（curl / cron / 任意调用方），
+    ``scheduler`` = 定时任务自己的标记，``on_add`` = 写记忆后自动跑的轻量 consolidate。
+    它只写进 ``dream_passes.source`` 与响应，不参与任何治理判定，所以不做白名单校验；
+    但要做最小归一化：去空白、转小写、限长，并剔除逗号/空白等会破坏
+    ``GET /dream?source=a,b`` 逗号语法的字符，空值回落到 ``manual``。
+    """
+    value = _UNSAFE_SOURCE_CHARS.sub("_", (source or "").strip().lower())
+    return value[:PASS_SOURCE_MAX_LEN] or PASS_SOURCE_DEFAULT
 
 
 def _report(pass_id: str, source: str, stats: Dict[str, int], actions: List[Dict[str, Any]], duration_ms: float, summary: str, **extra) -> Dict[str, Any]:
@@ -823,6 +842,7 @@ def run_dream(
     consolidate: bool = True,
     synthesize: bool = True,
     force: bool = False,
+    source: Optional[str] = None,
 ) -> Dict[str, Any]:
     filters = _entity_filters(user_id, agent_id, run_id)
     if not filters:
@@ -880,7 +900,7 @@ def run_dream(
     )
     return _report(
         pass_id,
-        "manual",
+        normalize_pass_source(source),
         stats,
         actions,
         duration_ms,

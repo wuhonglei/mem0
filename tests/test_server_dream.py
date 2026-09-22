@@ -2,13 +2,22 @@
 
 import importlib
 import os
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 from governance.actions import apply_merge, apply_supersede, evidence_hash, pick_canonical
 from governance.dedup import search_similar, split_auto_and_llm_candidates
-from governance.engine import is_synthesis_eligible, remap_llm_action, run_on_add, run_synthesis
+from governance.engine import (
+    PASS_SOURCE_MAX_LEN,
+    is_synthesis_eligible,
+    normalize_pass_source,
+    remap_llm_action,
+    run_on_add,
+    run_synthesis,
+)
+from governance.store import persist_report
 
 from mem0.memory.governance_filters import should_include_memory
 
@@ -357,3 +366,137 @@ def test_dream_post_runs_and_returns_report(client, _mock_memory):
     _, kwargs = _mock_memory.get_all.call_args
     assert kwargs["include_merged"] is False
     assert kwargs["latest_only"] is False
+
+
+def test_normalize_pass_source():
+    assert normalize_pass_source(None) == "manual"
+    assert normalize_pass_source("") == "manual"
+    assert normalize_pass_source("   ") == "manual"
+    assert normalize_pass_source("  Scheduler  ") == "scheduler"
+    assert normalize_pass_source("cursor-agent") == "cursor-agent"
+    # 逗号/空白会破坏 GET /dream?source=a,b 的逗号语法，写入前就抹掉
+    assert normalize_pass_source("my job, v2") == "my_job__v2"
+    assert len(normalize_pass_source("x" * 100)) == PASS_SOURCE_MAX_LEN
+
+
+def test_dream_post_records_caller_supplied_source(client, _mock_memory):
+    _mock_memory.get_all.return_value = {"results": []}
+    with patch("routers.dream.persist_report"):
+        resp = client.post(
+            "/dream", json={"user_id": "u1", "synthesize": False, "source": " Scheduler "}
+        )
+    assert resp.status_code == 200
+    assert resp.json()["source"] == "scheduler"  # 归一化后的标签
+
+
+def test_persist_report_keeps_source_and_defaults_to_manual():
+    class _Session:
+        def __init__(self):
+            self.rows = []
+
+        def add(self, row):
+            self.rows.append(row)
+
+        def flush(self):
+            return None
+
+        def commit(self):
+            return None
+
+    session = _Session()
+    for report_source in ("scheduler", None):
+        session.rows.clear()
+        persist_report(
+            session,
+            {
+                "pass_id": f"pass-{report_source}",
+                "user_id": "u1",
+                "source": report_source,
+                "stats": {},
+            },
+        )
+        assert session.rows[0].source == (report_source or "manual")
+
+
+class _CapturingSession:
+    """记录被执行的语句并返回固定行，避免测试依赖真实数据库。"""
+
+    def __init__(self, rows):
+        self.rows = rows
+        self.statements = []
+
+    def execute(self, stmt):
+        self.statements.append(stmt)
+        return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: list(self.rows)))
+
+    def close(self):
+        return None
+
+
+def _pass_row(pass_id: str, source: str, created_at):
+    return SimpleNamespace(
+        pass_id=pass_id,
+        user_id="u1",
+        agent_id=None,
+        run_id=None,
+        source=source,
+        stats={"merged": 0},
+        summary="scanned 1",
+        duration_ms=1,
+        created_at=created_at,
+    )
+
+
+def _compiled_sql(session: _CapturingSession, index: int = 0) -> str:
+    return str(session.statements[index].compile(compile_kwargs={"literal_binds": True}))
+
+
+def _list_dream(client, params: list[tuple[str, str]]):
+    """带 (db) override 的 GET /dream：返回 (响应, 捕获到的 session)。"""
+    import server.main as server_main
+    from db import get_db
+
+    session = _CapturingSession([_pass_row("p-manual", "manual", datetime(2026, 9, 8, tzinfo=timezone.utc))])
+    server_main.app.dependency_overrides[get_db] = lambda: session
+    try:
+        return client.get("/dream", params=params), session
+    finally:
+        server_main.app.dependency_overrides.pop(get_db, None)
+
+
+def test_dream_list_filters_by_source(client, _mock_memory):
+    """`source=manual` 必须下推到 SQL：只取全量 pass，绕开 on_add 把最新记录占满的问题。"""
+    resp, session = _list_dream(client, [("user_id", "u1"), ("source", "manual"), ("limit", "5")])
+    assert resp.status_code == 200
+    assert [row["source"] for row in resp.json()["results"]] == ["manual"]
+    sql = _compiled_sql(session)
+    assert "dream_passes.source IN ('manual')" in sql
+    assert "dream_passes.user_id = 'u1'" in sql
+    assert "ORDER BY dream_passes.created_at DESC" in sql
+    assert "LIMIT 5" in sql
+
+
+def test_dream_list_source_accepts_repeats_and_commas(client, _mock_memory):
+    resp, session = _list_dream(client, [("source", "manual"), ("source", "api")])
+    assert resp.status_code == 200
+    assert "dream_passes.source IN ('manual', 'api')" in _compiled_sql(session)
+
+    resp, session = _list_dream(client, [("source", "manual,api")])
+    assert resp.status_code == 200
+    assert "dream_passes.source IN ('manual', 'api')" in _compiled_sql(session)
+
+
+def test_dream_list_without_source_filters_not_applied(client, _mock_memory):
+    resp, session = _list_dream(client, [("user_id", "u1")])
+    assert resp.status_code == 200
+    sql = _compiled_sql(session)
+    assert "source IN" not in sql  # 只按 user_id 过滤，不额外下推 source
+    assert "dream_passes.user_id = 'u1'" in sql
+
+
+def test_dream_list_without_user_id_returns_all_and_honours_source(client, _mock_memory):
+    resp, session = _list_dream(client, [("source", "manual")])
+    assert resp.status_code == 200
+    sql = _compiled_sql(session)
+    assert "user_id = " not in sql  # 不传 user_id 时回落到全量列表
+    assert "dream_passes.source IN ('manual')" in sql

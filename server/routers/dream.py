@@ -1,7 +1,7 @@
 """Dream governance REST endpoints."""
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from auth import verify_auth
 from db import get_db
@@ -25,6 +25,14 @@ class DreamRunRequest(BaseModel):
     consolidate: bool = Field(True, description="Run the consolidate (merge/supersede) pass.")
     synthesize: bool = Field(True, description="Run the synthesis pass after consolidate.")
     force: bool = Field(False, description="Bypass the minimum-memory threshold for synthesis.")
+    source: Optional[str] = Field(
+        None,
+        description=(
+            "Label recorded on the pass (default 'manual'). Use it to tell callers apart, "
+            "e.g. source=scheduler for a cron job, then read them back with "
+            "GET /dream?source=manual,scheduler."
+        ),
+    )
 
 
 @router.post("")
@@ -43,6 +51,7 @@ def run_dream_pass(body: DreamRunRequest, _auth=Depends(verify_auth), db: Sessio
             consolidate=body.consolidate,
             synthesize=body.synthesize,
             force=body.force,
+            source=body.source,
         )
         try:
             persist_report(db, report)
@@ -58,11 +67,23 @@ def run_dream_pass(body: DreamRunRequest, _auth=Depends(verify_auth), db: Sessio
 @router.get("")
 def list_dream_passes(
     user_id: Optional[str] = None,
+    source: Optional[List[str]] = Query(
+        None,
+        description=(
+            "Only return passes whose source matches one of these values "
+            "(repeatable or comma-separated). Use source=manual to get full "
+            "passes only and skip the on_add light consolidations."
+        ),
+    ),
     limit: int = Query(50, ge=1, le=200),
     _auth=Depends(verify_auth),
     db: Session = Depends(get_db),
 ):
-    rows = list_passes(db, user_id=user_id, limit=limit)
+    # 允许 ?source=manual 与 ?source=manual,api 两种写法
+    sources = [
+        item.strip() for value in (source or []) for item in value.split(",") if item.strip()
+    ]
+    rows = list_passes(db, user_id=user_id, sources=sources or None, limit=limit)
     return {
         "results": [
             {
